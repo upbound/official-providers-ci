@@ -1,7 +1,8 @@
-package testing
+package pkg
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,8 +13,6 @@ import (
 const (
 	asyncKey   = "operation"
 	asyncValue = "async"
-
-	workDir = "/home/runner/work/official-providers/official-providers/"
 )
 
 var syncConditions = map[string]interface{}{
@@ -50,12 +49,12 @@ var asyncConditions = map[string]interface{}{
 	},
 }
 
-func GenerateTestFiles(filePaths []string, providerPath string) error {
-	inputFile, err := createFile("/tmp/automated-tests/case/00-apply.yaml")
+func generateTestFiles(filePaths []string, providerPath string) error {
+	inputFile, err := createFile("/tmp/automated-tests/case/00-apply.yaml", fs.ModeAppend)
 	if err != nil {
 		return err
 	}
-	priorSteps, err := getApplyTemplate(providerPath)
+	priorSteps, err := getPriorStepsTemplate(providerPath)
 	if err != nil {
 		return err
 	}
@@ -63,25 +62,25 @@ func GenerateTestFiles(filePaths []string, providerPath string) error {
 		return err
 	}
 
-	assertFile, err := createFile("/tmp/automated-tests/case/00-assert.yaml")
+	assertFile, err := createFile("/tmp/automated-tests/case/00-assert.yaml", fs.ModeAppend)
 	if err != nil {
 		return err
 	}
 
-	deleteFile, err := createFile("/tmp/automated-tests/case/01-delete.yaml")
+	deleteFile, err := createFile("/tmp/automated-tests/case/01-delete.yaml", fs.ModeAppend)
 	if err != nil {
 		return err
 	}
-	deleteSteps, err := deleteTemplate()
+	cleanupSteps, err := getCleanupSteps()
 	if err != nil {
 		return err
 	}
-	if err := writeToFile(deleteFile, deleteSteps); err != nil {
+	if err := writeToFile(deleteFile, cleanupSteps); err != nil {
 		return err
 	}
 
 	for _, f := range filePaths {
-		m, yamlData, err := readYamlFile(filepath.Join(workDir, f))
+		m, yamlData, err := readYamlFile(filepath.Join(rootDirectory, "/", f))
 		if err != nil {
 			return err
 		}
@@ -112,39 +111,28 @@ func GenerateTestFiles(filePaths []string, providerPath string) error {
 	return nil
 }
 
-func getApplyTemplate(providerPath string) ([]byte, error) {
+func getPriorStepsTemplate(providerPath string) ([]byte, error) {
 	m := map[string]interface{}{
 		"apiVersion": "kuttl.dev/v1beta1",
 		"kind":       "TestStep",
 		"commands": []map[string]interface{}{
-			{"command": "kubectl create ns crossplane-system"},
-			{"command": "kubectl create secret generic provider-creds -n crossplane-system --from-file=creds=/tmp/automated-tests/case/creds.conf"},
-			{"command": fmt.Sprintf("kubectl apply -f %s/examples/providerconfig.yaml", providerPath)},
+			{"command": "${KUBECTL} create ns crossplane-system"},
+			{"command": "${KUBECTL} create secret generic provider-creds -n crossplane-system --from-file=creds=/tmp/automated-tests/case/creds.conf"},
+			{"command": fmt.Sprintf("${KUBECTL} apply -f %s/examples/providerconfig.yaml", workingDirectory)},
 		},
 	}
 	return yaml.Marshal(m)
 }
 
-func deleteTemplate() ([]byte, error) {
+func getCleanupSteps() ([]byte, error) {
 	m := map[string]interface{}{
 		"apiVersion": "kuttl.dev/v1beta1",
 		"kind":       "TestStep",
 		"commands": []map[string]interface{}{
-			{"command": "kubectl delete managed --all"},
+			{"command": "${KUBECTL} delete managed --all"},
 		},
 	}
 	return yaml.Marshal(m)
-}
-
-func createFile(filePath string) (*os.File, error) {
-	file, err := os.Create(filePath)
-	if err != nil {
-		return nil, err
-	}
-	if err := file.Chmod(os.ModeAppend); err != nil {
-		return nil, err
-	}
-	return file, nil
 }
 
 func readYamlFile(filePath string) (map[string]interface{}, []byte, error) {
