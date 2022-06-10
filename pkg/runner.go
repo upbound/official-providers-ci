@@ -1,96 +1,74 @@
 package pkg
 
 import (
-	"bufio"
 	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
-	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/upbound/official-providers/testing/common"
 )
 
 const (
-	inputKeyword = `TEST_INPUT=`
-	defaultCase  = "default"
+	inputKeyword = "/test-examples" // followed by a space and comma-separated list.
+
+	defaultCase = "modified"
+
+	testDirectory  = "/tmp/automated-tests/case"
+	inputFileName  = "00-apply.yaml"
+	assertFileName = "00-assert.yaml"
+	deleteFileName = "01-delete.yaml"
+	credsFile      = "creds.conf"
 )
 
-var prDescription = os.Getenv("PR_BODY")
-var modifiedFiles = os.Getenv("MODIFIED_FILES")
-var providerName = os.Getenv("PROVIDER_NAME")
-var workingDirectory = os.Getenv("WORKING_DIRECTORY")
-var rootDirectory = os.Getenv("ROOT_DIR")
+var inputFilePath = fmt.Sprintf("%s/%s", testDirectory, inputFileName)
+var assertFilePath = fmt.Sprintf("%s/%s", testDirectory, assertFileName)
+var deleteFilePath = fmt.Sprintf("%s/%s", testDirectory, deleteFileName)
 
-func RunTest() error {
-	testFiles := getTestFiles()
-
+func RunTest(o *common.AutomatedTestOptions) error {
+	testFiles := getTestFiles(o.Description, o.ModifiedFiles, o.ProviderName)
 	if len(testFiles) == 0 {
-		log.Warn("The file to test was not found. Skipped...")
-		os.Exit(0)
+		log.Warnf("The file to test for %s was not found. Skipped...", o.ProviderName)
+		return nil
 	}
 
-	if err := runCommand("bash", true, "-c", filepath.Join("../.github/scripts/install_kubectl_kuttl.sh")); err != nil {
-		return err
+	if err := os.MkdirAll(testDirectory, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "cannot create directory %s", testDirectory)
 	}
+	log.Infof("%s directory was created!", testDirectory)
 
-	if err := os.MkdirAll("/tmp/automated-tests/case", os.ModePerm); err != nil {
-		return err
+	if err := createProviderCredsFile(o.ProviderName); err != nil {
+		return errors.Wrapf(err, "cannot write %s credentials file", o.ProviderName)
 	}
+	log.Info("Provider credentials were successfully written.")
 
-	log.Info("/tmp/automated-tests/case directory was created!")
-
-	if err := createProviderCredsFile(providerName); err != nil {
-		return err
+	if err := generateTestFiles(testFiles, o.WorkingDirectory, o.RootDirectory); err != nil {
+		return errors.Wrap(err, "cannot generate test files")
 	}
-
-	log.Info("Provider credentials were successfully stored.")
-
-	if err := generateTestFiles(testFiles, providerName); err != nil {
-		return err
-	}
-
 	log.Info("Test files were generated!")
 
-	if err := runCommand("bash", true, "-c", "cat /tmp/automated-tests/case/00-apply.yaml"); err != nil {
-		return err
+	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, inputFileName)); err != nil {
+		return errors.Wrapf(err, "cannot print %s", inputFileName)
 	}
-	if err := runCommand("bash", true, "-c", "cat /tmp/automated-tests/case/00-assert.yaml"); err != nil {
-		return err
+	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, assertFileName)); err != nil {
+		return errors.Wrapf(err, "cannot print %s", assertFileName)
 	}
-	if err := runCommand("bash", true, "-c", `"${KIND}" create cluster`); err != nil {
-		return err
-	}
-	if err := runCommand("bash", true, "-c", fmt.Sprintf(`"${KUBECTL}" apply -f %s/package/crds`, workingDirectory)); err != nil {
-		return err
+	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, deleteFileName)); err != nil {
+		return errors.Wrapf(err, "cannot print %s", deleteFileName)
 	}
 
-	time.Sleep(10 * time.Second)
-
-	if err := os.Chdir(workingDirectory); err != nil {
-		return err
+	if err := runCommand("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200`); err != nil {
+		return errors.Wrap(err, "cannot successfully completed automated tests")
 	}
-
-	log.Infof("Changed directory to %s", workingDirectory)
-
-	if err := runCommand("bash", false, "-c", "make run"); err != nil {
-		return err
-	}
-
-	if err := runCommand("bash", true, "-c", "kuttl test --start-kind=false /tmp/automated-tests/ --timeout 1200"); err != nil {
-		return err
-	}
+	log.Info("Automated Tests successfully completed!")
 	return nil
 }
 
-func getTestFiles() []string {
-	if !strings.Contains(prDescription, inputKeyword) {
-		log.Warn("TEST_INPUT keyword not found in Pull Request description. Skipped...")
-		os.Exit(0)
-	}
-
+func getTestFiles(prDescription, modifiedFiles, providerName string) []string {
 	testInput := strings.Split(strings.Split(prDescription, inputKeyword)[1], `"`)[1]
 	if testInput == defaultCase {
 		return strings.Split(modifiedFiles, ",")
@@ -107,43 +85,12 @@ func getTestFiles() []string {
 	return filteredCustomInputList
 }
 
-func runCommand(command string, wait bool, args ...string) error {
+func runCommand(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
-
-	cmdOutReader, err := cmd.StdoutPipe()
+	out, err := cmd.CombinedOutput()
+	log.Info(string(out))
 	if err != nil {
-		log.Error("Error creating StdoutPipe for Cmd", err)
-		return err
-	}
-
-	cmdErrReader, err := cmd.StderrPipe()
-	if err != nil {
-		log.Error("Error creating StderrPipe for Cmd", err)
-		return err
-	}
-
-	outScanner := bufio.NewScanner(cmdOutReader)
-	go func() {
-		for outScanner.Scan() {
-			log.Infof("\t > %s\n", outScanner.Text())
-		}
-	}()
-
-	errScanner := bufio.NewScanner(cmdErrReader)
-	go func() {
-		for errScanner.Scan() {
-			log.Infof("\t > %s\n", errScanner.Text())
-		}
-	}()
-
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-
-	if wait {
-		if err := cmd.Wait(); err != nil {
-			return err
-		}
+		return errors.Wrap(err, "an error occurred while running command")
 	}
 
 	return nil
@@ -152,12 +99,11 @@ func runCommand(command string, wait bool, args ...string) error {
 func createProviderCredsFile(providerName string) error {
 	providerCredsEnv := fmt.Sprintf("%s_CREDS", strings.ToUpper(strings.ReplaceAll(providerName, "-", "_")))
 	providerCreds := os.Getenv(providerCredsEnv)
-	f, err := createFile("/tmp/automated-tests/case/creds.conf", fs.ModePerm)
-	if err != nil {
-		return err
-	}
-	if _, err := f.WriteString(providerCreds); err != nil {
-		return err
-	}
-	return nil
+	// creds.conf file contains the provider credentials. This file is used for
+	// generating the credential secrets of provider.
+	// Example aws creds.conf file:
+	// > [default]
+	// > aws_access_key_id = ***
+	// > aws_secret_access_key = ***
+	return os.WriteFile(fmt.Sprintf("%s/%s", testDirectory, credsFile), []byte(providerCreds), fs.ModePerm)
 }
