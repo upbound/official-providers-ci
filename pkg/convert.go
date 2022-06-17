@@ -1,14 +1,12 @@
 package pkg
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
@@ -20,8 +18,19 @@ const (
 
 	manifestSeparator = "\n---\n"
 
-	priorSteps   = "apiVersion: kuttl.dev/v1beta1\nkind: TestStep\ncommands:\n- command: ${KUBECTL} create secret generic provider-creds -n crossplane-system --from-file=creds=/tmp/automated-tests/case/creds.conf\n- command: ${KUBECTL} apply -f {{.}}/examples/providerconfig.yaml"
-	cleanupSteps = "apiVersion: kuttl.dev/v1beta1\nkind: TestStep\ncommands:\n- command: ${KUBECTL} delete managed --all"
+	priorStepsTemplate = `
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: ${KUBECTL} create secret generic provider-creds -n crossplane-system --from-file=creds=/tmp/automated-tests/case/creds.conf
+- command: ${KUBECTL} apply -f %s/examples/providerconfig.yaml`
+
+	cleanupSteps = `
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: ${KUBECTL} delete managed --all
+`
 )
 
 var (
@@ -63,16 +72,8 @@ var (
 func generateTestFiles(filePaths []string, workingDirectory, rootDirectory string) error {
 	var inputFileData, assertFileData, deletionFileData []string
 
-	t, err := template.New("PriorStepsTemplate").Parse(priorSteps)
-	if err != nil {
-		return errors.Wrap(err, "cannot create a template object for prior steps")
-	}
-	var priorStepsBuff bytes.Buffer
-	if err = t.Execute(&priorStepsBuff, workingDirectory); err != nil {
-		return errors.Wrap(err, "cannot execute template operation for prior steps")
-	}
-
-	inputFileData = append(inputFileData, priorStepsBuff.String())
+	priorSteps := fmt.Sprintf(priorStepsTemplate, workingDirectory)
+	inputFileData = append(inputFileData, priorSteps)
 	deletionFileData = append(deletionFileData, cleanupSteps)
 
 	for _, f := range filePaths {

@@ -1,9 +1,10 @@
 package common
 
 type AutomatedTestOptions struct {
-	Description      string
-	ModifiedFiles    string
-	ProviderName     string
-	RootDirectory    string
-	WorkingDirectory string
+	Description         string
+	ModifiedFiles       string
+	ProviderName        string
+	RootDirectory       string
+	WorkingDirectory    string
+	ProviderCredentials string
 }

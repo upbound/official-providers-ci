@@ -41,7 +41,7 @@ func RunTest(o *common.AutomatedTestOptions) error {
 	}
 	log.Infof("%s directory was created!", testDirectory)
 
-	if err := createProviderCredsFile(o.ProviderName); err != nil {
+	if err := os.WriteFile(fmt.Sprintf("%s/%s", testDirectory, credsFile), []byte(o.ProviderCredentials), fs.ModePerm); err != nil {
 		return errors.Wrapf(err, "cannot write %s credentials file", o.ProviderName)
 	}
 	log.Info("Provider credentials were successfully written.")
@@ -50,16 +50,6 @@ func RunTest(o *common.AutomatedTestOptions) error {
 		return errors.Wrap(err, "cannot generate test files")
 	}
 	log.Info("Test files were generated!")
-
-	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, inputFileName)); err != nil {
-		return errors.Wrapf(err, "cannot print %s", inputFileName)
-	}
-	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, assertFileName)); err != nil {
-		return errors.Wrapf(err, "cannot print %s", assertFileName)
-	}
-	if err := runCommand("bash", "-c", fmt.Sprintf("cat %s/%s", testDirectory, deleteFileName)); err != nil {
-		return errors.Wrapf(err, "cannot print %s", deleteFileName)
-	}
 
 	if err := runCommand("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200`); err != nil {
 		return errors.Wrap(err, "cannot successfully completed automated tests")
@@ -94,16 +84,4 @@ func runCommand(command string, args ...string) error {
 	}
 
 	return nil
-}
-
-func createProviderCredsFile(providerName string) error {
-	providerCredsEnv := fmt.Sprintf("%s_CREDS", strings.ToUpper(strings.ReplaceAll(providerName, "-", "_")))
-	providerCreds := os.Getenv(providerCredsEnv)
-	// creds.conf file contains the provider credentials. This file is used for
-	// generating the credential secrets of provider.
-	// Example aws creds.conf file:
-	// > [default]
-	// > aws_access_key_id = ***
-	// > aws_secret_access_key = ***
-	return os.WriteFile(fmt.Sprintf("%s/%s", testDirectory, credsFile), []byte(providerCreds), fs.ModePerm)
 }
