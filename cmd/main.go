@@ -3,15 +3,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/upbound/official-providers/testing/common"
 	"github.com/upbound/official-providers/testing/pkg"
 )
 
 func main() {
+	cd, err := os.Getwd()
+	if err != nil {
+		kingpin.FatalIfError(err, "cannot get current directory")
+	}
+	rootDirectory := filepath.Dir(cd)
+
 	var (
 		app         = kingpin.New("auto-test", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
 		description = app.Flag("pr-description", "Description of Pull Request. Value of this option will be used to trigger/configure the tests."+
@@ -25,20 +31,23 @@ func main() {
 			"the value of this option is used as input.\nIf this option is not set, 'MODIFIED_FILES' env var is used as default.").Envar("MODIFIED_FILES").String()
 		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
 			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
-		rootDirectory = app.Flag("root-dir", "Root directory of the official-providers repo\n"+
-			"If this option is not set, 'ROOT_DIRECTORY' env var is used as default.").Envar("ROOT_DIRECTORY").String()
+		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	o := &common.AutomatedTestOptions{
-		Description:   *description,
-		ModifiedFiles: *modifiedFiles,
-		ProviderName:  *providerName,
-		RootDirectory: *rootDirectory,
+	o := &pkg.AutomatedTestOptions{
+		Description:    *description,
+		ModifiedFiles:  *modifiedFiles,
+		ProviderName:   *providerName,
+		RootDirectory:  rootDirectory,
+		DataSourcePath: *dataSourcePath,
 	}
-	o.WorkingDirectory = fmt.Sprintf("%s/%s", o.RootDirectory, o.ProviderName)
 	providerCredsEnv := fmt.Sprintf("%s_CREDS", strings.ToUpper(strings.ReplaceAll(o.ProviderName, "-", "_")))
 	o.ProviderCredentials = os.Getenv(providerCredsEnv)
 
-	kingpin.FatalIfError(pkg.RunTest(o), "Cannot run automated tests successfully")
+	if o.DataSourcePath == "" {
+		o.DataSourcePath = filepath.Join(o.RootDirectory, "testing/testdata/datasource.yaml")
+	}
+
+	kingpin.FatalIfError(pkg.RunTest(o), "cannot run automated tests successfully")
 }

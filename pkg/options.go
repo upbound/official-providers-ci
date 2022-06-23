@@ -1,10 +1,10 @@
-package common
+package pkg
 
 type AutomatedTestOptions struct {
 	Description         string
 	ModifiedFiles       string
 	ProviderName        string
 	RootDirectory       string
-	WorkingDirectory    string
 	ProviderCredentials string
+	DataSourcePath      string
 }
