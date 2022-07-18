@@ -34,7 +34,7 @@ kind: TestAssert
 timeout: 1200
 commands:`
 
-	assertStatementTemplate = "- command: ${KUBECTL} wait %s --for=condition=Ready --timeout 10s"
+	assertStatementTemplate = "- command: ${KUBECTL} wait %s --for=condition=UpToDate --timeout 10s"
 
 	cleanupSteps = `
 apiVersion: kuttl.dev/v1beta1
