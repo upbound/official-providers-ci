@@ -32,9 +32,10 @@ commands:
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 1200
-commands:`
+commands:
+- command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite`
 
-	assertStatementTemplate = "- command: ${KUBECTL} wait %s --for=condition=UpToDate --timeout 20s"
+	assertStatementTemplate = "- command: ${KUBECTL} wait %s --for=condition=Test --timeout 10s"
 
 	cleanupSteps = `
 apiVersion: kuttl.dev/v1beta1
