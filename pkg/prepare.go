@@ -17,7 +17,6 @@ import (
 
 const (
 	inputKeyword = "/test-examples" // followed by a space and comma-separated list.
-	defaultCase  = "modified"
 
 	testDirectory = "/tmp/automated-tests/case"
 	credsFile     = "creds.conf"

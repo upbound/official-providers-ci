@@ -10,16 +10,13 @@ import (
 func RunTest(o *AutomatedTestOptions) error {
 	var testFilePaths []string
 	testInput := strings.Split(strings.Split(o.Description, inputKeyword)[1], `"`)[1]
-	if testInput == defaultCase {
-		testFilePaths = strings.Split(o.ModifiedFiles, ",")
-	} else {
-		customInputList := strings.Split(testInput, ",")
-		for _, customInput := range customInputList {
-			if strings.Contains(customInput, o.ProviderName) {
-				testFilePaths = append(testFilePaths, customInput)
-			}
+	customInputList := strings.Split(testInput, ",")
+	for _, customInput := range customInputList {
+		if strings.Contains(customInput, o.ProviderName) {
+			testFilePaths = append(testFilePaths, customInput)
 		}
 	}
+
 	if len(testFilePaths) == 0 {
 		log.Warnf("The file to test for %s was not found. Skipped...", o.ProviderName)
 		return nil

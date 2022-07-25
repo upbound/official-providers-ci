@@ -19,16 +19,13 @@ func main() {
 	rootDirectory := filepath.Dir(cd)
 
 	var (
-		app         = kingpin.New("auto-test", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
-		description = app.Flag("pr-description", "Description of Pull Request. Value of this option will be used to trigger/configure the tests."+
-			"TEST_INPUT keyword is searched and if found the automated tests is triggered."+
-			"The possible usages for TEST_INPUT:\n"+
-			"'modified': Modified files in the example directories of providers are used as test inputs.\n"+
+		app     = kingpin.New("auto-test", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
+		comment = app.Flag("comment", "Content of Issue Comment. Value of this option will be used to trigger/configure the tests."+
+			"/test-examples keyword is searched and if found the automated tests is triggered."+
+			"The possible usages for /test-examples:\n"+
 			"'provider-aws/examples-generated/s3/bucket.yaml,provider-gcp/examples-generated/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
-			"If this option is not set, 'PR_DESCRIPTION' env var is used as default.").Envar("PR_DESCRIPTION").String()
-		modifiedFiles = app.Flag("modified-files", "Modified Files in the example directories of providers. If the test case is determined as 'modified', "+
-			"the value of this option is used as input.\nIf this option is not set, 'MODIFIED_FILES' env var is used as default.").Envar("MODIFIED_FILES").String()
+			"If this option is not set, 'COMMENT' env var is used as default.").Envar("COMMENT").String()
 		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
 			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
 		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").String()
@@ -36,8 +33,7 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	o := &pkg.AutomatedTestOptions{
-		Description:    *description,
-		ModifiedFiles:  *modifiedFiles,
+		Description:    *comment,
 		ProviderName:   *providerName,
 		RootDirectory:  rootDirectory,
 		DataSourcePath: *dataSourcePath,
