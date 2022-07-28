@@ -9,8 +9,7 @@ import (
 
 func RunTest(o *AutomatedTestOptions) error {
 	var testFilePaths []string
-	testInput := strings.Split(strings.Split(o.Description, inputKeyword)[1], `"`)[1]
-	customInputList := strings.Split(testInput, ",")
+	customInputList := strings.Split(o.ExampleList, ",")
 	for _, customInput := range customInputList {
 		if strings.Contains(customInput, o.ProviderName) {
 			testFilePaths = append(testFilePaths, customInput)

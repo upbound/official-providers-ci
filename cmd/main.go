@@ -19,13 +19,12 @@ func main() {
 	rootDirectory := filepath.Dir(cd)
 
 	var (
-		app     = kingpin.New("auto-test", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
-		comment = app.Flag("comment", "Content of Issue Comment. Value of this option will be used to trigger/configure the tests."+
-			"/test-examples keyword is searched and if found the automated tests is triggered."+
-			"The possible usages for /test-examples:\n"+
+		app         = kingpin.New("uptest", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
+		exampleList = app.Flag("example-list", "List of example manifests. Value of this option will be used to trigger/configure the tests."+
+			"The possible usage:\n"+
 			"'provider-aws/examples-generated/s3/bucket.yaml,provider-gcp/examples-generated/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
-			"If this option is not set, 'COMMENT' env var is used as default.").Envar("COMMENT").String()
+			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
 		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
 			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
 		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").String()
@@ -33,7 +32,7 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	o := &pkg.AutomatedTestOptions{
-		Description:    *comment,
+		ExampleList:    *exampleList,
 		ProviderName:   *providerName,
 		RootDirectory:  rootDirectory,
 		DataSourcePath: *dataSourcePath,

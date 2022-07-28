@@ -1,7 +1,7 @@
 package pkg
 
 type AutomatedTestOptions struct {
-	Description         string
+	ExampleList         string
 	ProviderName        string
 	RootDirectory       string
 	ProviderCredentials string
