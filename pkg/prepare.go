@@ -13,16 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 const (
-	inputKeyword = "/test-examples" // followed by a space and comma-separated list.
-
 	testDirectory = "/tmp/automated-tests/case"
 	credsFile     = "creds.conf"
 )
@@ -81,6 +77,10 @@ func (p *Preparer) PrepareManifests(rootDirectory, providerCredentials string) (
 				return nil, errors.Wrap(err, "cannot decode manifest")
 			}
 			if u != nil {
+				if v, ok := u.GetAnnotations()["upjet.upbound.io/manual-intervention"]; ok {
+					fmt.Printf("Skipping %s with name %s since it requires the following manual intervention: %s", u.GroupVersionKind().String(), u.GetName(), v)
+					continue
+				}
 				manifests = append(manifests, u)
 			}
 		}
@@ -95,7 +95,7 @@ func (p *Preparer) injectVariables(rootDirectory string) ([]string, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot read data source file")
 		}
-		if err := yaml.Unmarshal(dataSource, dataSourceMap); err != nil {
+		if err := kyaml.Unmarshal(dataSource, dataSourceMap); err != nil {
 			return nil, errors.Wrap(err, "cannot prepare data source map")
 		}
 	}

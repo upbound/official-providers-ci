@@ -8,11 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"sigs.k8s.io/yaml"
 )
 
 const (
