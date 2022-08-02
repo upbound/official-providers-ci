@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"bufio"
 	"fmt"
 	"io/fs"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 )
@@ -70,10 +70,18 @@ func (t *Tester) ExecuteTests(rootDirectory, providerName string) error {
 	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName)); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
-	cmd := exec.Command("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200`)
-	out, err := cmd.CombinedOutput()
-	log.Printf("%s\n", out)
-	return errors.Wrap(err, "cannot successfully completed automated tests")
+	cmd := exec.Command("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200 2>&1`)
+	stdout, _ := cmd.StdoutPipe()
+	err = cmd.Start()
+	if err != nil {
+		return errors.Wrap(err, "cannot start kuttl")
+	}
+	sc := bufio.NewScanner(stdout)
+	sc.Split(bufio.ScanLines)
+	for sc.Scan() {
+		fmt.Println(sc.Text())
+	}
+	return errors.Wrap(cmd.Wait(), "kuttl failed")
 }
 
 func (t *Tester) generateAssertFiles() ([]string, error) {
