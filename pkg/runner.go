@@ -22,21 +22,15 @@ func RunTest(o *AutomatedTestOptions) error {
 	}
 
 	// Read examples and inject data source values to manifests
-	p := &Preparer{
-		testFilePaths:  testFilePaths,
-		dataSourcePath: o.DataSourcePath,
-	}
-	inputs, err := p.PrepareManifests(o.RootDirectory, o.ProviderCredentials)
+	p := NewPreparer(testFilePaths, WithDataSource(o.DataSourcePath))
+	manifests, err := p.PrepareManifests(o.RootDirectory, o.ProviderCredentials)
 	if err != nil {
-		return errors.Wrap(err, "cannot write manifests")
+		return errors.Wrap(err, "cannot prepare manifests")
 	}
 
 	// Prepare assert environment and run tests
-	t := &Tester{
-		inputs: inputs,
-	}
-	if err := t.ExecuteTests(p.testFilePaths, o.RootDirectory, o.ProviderName); err != nil {
-		return errors.Wrap(err, "cannot successfully completed automated tests")
+	if err := NewTester(manifests).ExecuteTests(o.RootDirectory, o.ProviderName); err != nil {
+		return errors.Wrap(err, "cannot execute tests")
 	}
 
 	return nil

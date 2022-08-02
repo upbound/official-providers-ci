@@ -1,20 +1,18 @@
 package pkg
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const (
@@ -55,12 +53,18 @@ var (
 	deleteFilePath = filepath.Join(testDirectory, deleteFileName)
 )
 
-type Tester struct {
-	inputs []string
+func NewTester(manifests []*unstructured.Unstructured) *Tester {
+	return &Tester{
+		manifests: manifests,
+	}
 }
 
-func (t *Tester) ExecuteTests(testFilePaths []string, rootDirectory, providerName string) error {
-	assertManifest, err := t.generateAssertFiles(testFilePaths, rootDirectory)
+type Tester struct {
+	manifests []*unstructured.Unstructured
+}
+
+func (t *Tester) ExecuteTests(rootDirectory, providerName string) error {
+	assertManifest, err := t.generateAssertFiles()
 	if err != nil {
 		return errors.Wrap(err, "cannot generate assert files")
 	}
@@ -70,42 +74,30 @@ func (t *Tester) ExecuteTests(testFilePaths []string, rootDirectory, providerNam
 	cmd := exec.Command("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200`)
 	out, err := cmd.CombinedOutput()
 	log.Printf("%s\n", out)
-	if err != nil {
-		return errors.Wrap(err, "cannot successfully completed automated tests")
-	}
-	return nil
+	return errors.Wrap(err, "cannot successfully completed automated tests")
 }
 
-func (t *Tester) generateAssertFiles(testFilePaths []string, rootDirectory string) ([]string, error) {
+func (t *Tester) generateAssertFiles() ([]string, error) {
 	assertManifest := []string{assertFileBase}
-	for _, f := range testFilePaths {
-		manifestData, err := ioutil.ReadFile(filepath.Join(rootDirectory, f))
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot read %s", filepath.Join(rootDirectory, f))
-		}
-		decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewBufferString(string(manifestData)), 1024)
-		for {
-			u := &unstructured.Unstructured{}
-			if err := decoder.Decode(&u); err != nil {
-				if err == io.EOF {
-					break
-				}
-				return nil, errors.Wrap(err, "cannot decode manifest")
-			}
-			if u != nil {
-				assertManifest = append(assertManifest, fmt.Sprintf(assertStatementTemplate,
-					fmt.Sprintf("%s.%s/%s", strings.ToLower(u.GroupVersionKind().Kind),
-						strings.ToLower(u.GroupVersionKind().Group), u.GetName())))
-			}
-		}
+	for _, m := range t.manifests {
+		assertManifest = append(assertManifest, fmt.Sprintf(assertStatementTemplate,
+			fmt.Sprintf("%s.%s/%s", strings.ToLower(m.GroupVersionKind().Kind),
+				strings.ToLower(m.GroupVersionKind().Group), m.GetName())))
 	}
 	return assertManifest, nil
 }
 
 func (t *Tester) writeKuttlFiles(assertManifest []string, workingDirectory string) error {
 	priorSteps := fmt.Sprintf(priorStepsTemplate, workingDirectory)
-	kuttlInputs := []string{priorSteps}
-	kuttlInputs = append(kuttlInputs, t.inputs...)
+	kuttlInputs := make([]string, len(t.manifests)+1)
+	kuttlInputs[0] = priorSteps
+	for i, m := range t.manifests {
+		d, err := yaml.Marshal(m)
+		if err != nil {
+			return errors.Wrapf(err, "cannot marshal manifest %s with name %s", m.GroupVersionKind().String(), m.GetName())
+		}
+		kuttlInputs[i+1] = string(d)
+	}
 
 	if err := os.WriteFile(inputFilePath, []byte(strings.Join(kuttlInputs, manifestSeparator)), fs.ModePerm); err != nil {
 		return errors.Wrapf(err, "cannot write input manifests to %s", inputFilePath)

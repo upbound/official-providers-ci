@@ -27,7 +27,7 @@ func main() {
 			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
 		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
 			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
-		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").String()
+		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
