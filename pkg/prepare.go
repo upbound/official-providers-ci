@@ -78,7 +78,7 @@ func (p *Preparer) PrepareManifests(rootDirectory, providerCredentials string) (
 			}
 			if u != nil {
 				if v, ok := u.GetAnnotations()["upjet.upbound.io/manual-intervention"]; ok {
-					fmt.Printf("Skipping %s with name %s since it requires the following manual intervention: %s", u.GroupVersionKind().String(), u.GetName(), v)
+					fmt.Printf("Skipping %s with name %s since it requires the following manual intervention: %s\n", u.GroupVersionKind().String(), u.GetName(), v)
 					continue
 				}
 				manifests = append(manifests, u)
