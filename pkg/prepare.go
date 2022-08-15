@@ -3,6 +3,7 @@ package pkg
 import (
 	"bytes"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -95,7 +96,7 @@ func (p *Preparer) injectVariables(rootDirectory string) ([]string, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot read data source file")
 		}
-		if err := kyaml.Unmarshal(dataSource, dataSourceMap); err != nil {
+		if err := yaml.Unmarshal(dataSource, dataSourceMap); err != nil {
 			return nil, errors.Wrap(err, "cannot prepare data source map")
 		}
 	}
