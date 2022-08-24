@@ -27,15 +27,17 @@ func main() {
 			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
 		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
 			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
-		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		dataSourcePath     = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		skipProviderConfig = app.Flag("skip-provider-config", "Skip ProviderConfig creation.").Bool()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	o := &pkg.AutomatedTestOptions{
-		ExampleList:    *exampleList,
-		ProviderName:   *providerName,
-		RootDirectory:  rootDirectory,
-		DataSourcePath: *dataSourcePath,
+		ExampleList:        *exampleList,
+		ProviderName:       *providerName,
+		RootDirectory:      rootDirectory,
+		DataSourcePath:     *dataSourcePath,
+		SkipProviderConfig: *skipProviderConfig,
 	}
 	providerCredsEnv := fmt.Sprintf("%s_CREDS", strings.ToUpper(strings.ReplaceAll(o.ProviderName, "-", "_")))
 	o.ProviderCredentials = os.Getenv(providerCredsEnv)

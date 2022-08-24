@@ -62,12 +62,12 @@ type Tester struct {
 	manifests []*unstructured.Unstructured
 }
 
-func (t *Tester) ExecuteTests(rootDirectory, providerName string) error {
+func (t *Tester) ExecuteTests(rootDirectory, providerName string, skipProviderConfig bool) error {
 	assertManifest, err := t.generateAssertFiles()
 	if err != nil {
 		return errors.Wrap(err, "cannot generate assert files")
 	}
-	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName)); err != nil {
+	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName), skipProviderConfig); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
 	cmd := exec.Command("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200 2>&1`)
@@ -97,10 +97,12 @@ func (t *Tester) generateAssertFiles() ([]string, error) {
 	return assertManifest, nil
 }
 
-func (t *Tester) writeKuttlFiles(assertManifest []string, workingDirectory string) error {
-	priorSteps := fmt.Sprintf(priorStepsTemplate, workingDirectory)
+func (t *Tester) writeKuttlFiles(assertManifest []string, workingDirectory string, skipProviderConfig bool) error {
 	kuttlInputs := make([]string, len(t.manifests)+1)
-	kuttlInputs[0] = priorSteps
+	if !skipProviderConfig {
+		priorSteps := fmt.Sprintf(priorStepsTemplate, workingDirectory)
+		kuttlInputs[0] = priorSteps
+	}
 	for i, m := range t.manifests {
 		d, err := yaml.Marshal(m)
 		if err != nil {

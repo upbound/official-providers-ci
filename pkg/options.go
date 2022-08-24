@@ -6,4 +6,5 @@ type AutomatedTestOptions struct {
 	RootDirectory       string
 	ProviderCredentials string
 	DataSourcePath      string
+	SkipProviderConfig  bool
 }

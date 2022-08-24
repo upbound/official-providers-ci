@@ -29,7 +29,7 @@ func RunTest(o *AutomatedTestOptions) error {
 	}
 
 	// Prepare assert environment and run tests
-	if err := NewTester(manifests).ExecuteTests(o.RootDirectory, o.ProviderName); err != nil {
+	if err := NewTester(manifests).ExecuteTests(o.RootDirectory, o.ProviderName, o.SkipProviderConfig); err != nil {
 		return errors.Wrap(err, "cannot execute tests")
 	}
 
