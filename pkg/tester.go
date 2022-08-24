@@ -87,6 +87,9 @@ func (t *Tester) ExecuteTests(rootDirectory, providerName string) error {
 func (t *Tester) generateAssertFiles() ([]string, error) {
 	assertManifest := []string{assertFileBase}
 	for _, m := range t.manifests {
+		if m.GroupVersionKind().String() == "/v1, Kind=Secret" {
+			continue
+		}
 		assertManifest = append(assertManifest, fmt.Sprintf(assertStatementTemplate,
 			fmt.Sprintf("%s.%s/%s", strings.ToLower(m.GroupVersionKind().Kind),
 				strings.ToLower(m.GroupVersionKind().Group), m.GetName())))
