@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ commands:
 	assertFileBase = `
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 1200
+timeout: %s
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite`
 
@@ -50,6 +51,8 @@ var (
 	inputFilePath  = filepath.Join(testDirectory, inputFileName)
 	assertFilePath = filepath.Join(testDirectory, assertFileName)
 	deleteFilePath = filepath.Join(testDirectory, deleteFileName)
+
+	timeout = 1200
 )
 
 func NewTester(manifests []*unstructured.Unstructured) *Tester {
@@ -70,7 +73,7 @@ func (t *Tester) ExecuteTests(rootDirectory, providerName string, skipProviderCo
 	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName), skipProviderConfig); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
-	cmd := exec.Command("bash", "-c", `"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout 1200 2>&1`)
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout %d 2>&1`, timeout))
 	stdout, _ := cmd.StdoutPipe()
 	err = cmd.Start()
 	if err != nil {
@@ -93,7 +96,17 @@ func (t *Tester) generateAssertFiles() ([]string, error) {
 		assertManifest = append(assertManifest, fmt.Sprintf(assertStatementTemplate,
 			fmt.Sprintf("%s.%s/%s", strings.ToLower(m.GroupVersionKind().Kind),
 				strings.ToLower(m.GroupVersionKind().Group), m.GetName())))
+		if v, ok := m.GetAnnotations()["upjet.upbound.io/timeout"]; ok {
+			vint, err := strconv.Atoi(v)
+			if err != nil {
+				return nil, errors.Wrap(err, "timeout value is not valid")
+			}
+			if vint > timeout {
+				timeout = vint
+			}
+		}
 	}
+	assertManifest[0] = fmt.Sprintf(assertManifest[0], strconv.Itoa(timeout))
 	return assertManifest, nil
 }
 
