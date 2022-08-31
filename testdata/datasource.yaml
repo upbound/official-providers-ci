@@ -4,3 +4,5 @@ aws_account_id: 609897127049
 aws_region: us-west-1
 aws_noop_function_arn: arn:aws:lambda:us-west-1:609897127049:function:official-providers-noop-test-func
 aws_noop_function_name: official-providers-noop-test-func
+cloudplatform_project.projectId: official-provider-testing
+google_iam_member.member: serviceAccount:official-provider-testing-noop@official-provider-testing.iam.gserviceaccount.com
