@@ -130,7 +130,7 @@ func (p *Preparer) injectValues(manifestData string, dataSourceMap map[string]st
 		switch randomKey[1] {
 		case "RFC1123Subdomain":
 			r := generateRFC1123SubdomainCompatibleString()
-			manifestData = strings.Replace(manifestData, randomKey[0], r, -1)
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
 		default:
 			continue
 		}
