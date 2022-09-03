@@ -73,7 +73,7 @@ func (t *Tester) ExecuteTests(rootDirectory, providerName string, skipProviderCo
 	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName), skipProviderConfig); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false /tmp/automated-tests/ --timeout %d 2>&1`, timeout))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete /tmp/automated-tests/ --timeout %d 2>&1`, timeout))
 	stdout, _ := cmd.StdoutPipe()
 	err = cmd.Start()
 	if err != nil {
