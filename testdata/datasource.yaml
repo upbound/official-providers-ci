@@ -1,8 +1,6 @@
 azurerm_client_config.current.tenant_id: b9925bc4-8383-4c37-b9d2-fa456d1bb1c7
-azurerm_client_config.current.object_id: 847c7043-b0a5-4fdf-9285-ee084c94a206
+azurerm_client_config.current.object_id: d949679c-f7ed-4e18-a8ac-0f5560ed3fdc
 aws_account_id: 609897127049
 aws_region: us-west-1
 aws_noop_function_arn: arn:aws:lambda:us-west-1:609897127049:function:official-providers-noop-test-func
 aws_noop_function_name: official-providers-noop-test-func
-cloudplatform_project.projectId: official-provider-testing
-google_iam_member.member: serviceAccount:official-provider-testing-noop@official-provider-testing.iam.gserviceaccount.com
