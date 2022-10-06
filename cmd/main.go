@@ -16,7 +16,6 @@ func main() {
 	if err != nil {
 		kingpin.FatalIfError(err, "cannot get current directory")
 	}
-	rootDirectory := filepath.Dir(cd)
 
 	var (
 		app         = kingpin.New("uptest", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
@@ -35,7 +34,7 @@ func main() {
 	o := &pkg.AutomatedTestOptions{
 		ExampleList:        *exampleList,
 		ProviderName:       *providerName,
-		RootDirectory:      rootDirectory,
+		RootDirectory:      filepath.Clean(cd),
 		DataSourcePath:     *dataSourcePath,
 		SkipProviderConfig: *skipProviderConfig,
 	}
