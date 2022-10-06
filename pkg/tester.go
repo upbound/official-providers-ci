@@ -22,7 +22,7 @@ const (
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} create namespace upbound-system
+- command: ${KUBECTL} get namespace upbound-system > /dev/null 2>&1 || ${KUBECTL} create namespace upbound-system
 - command: ${KUBECTL} create secret generic provider-creds -n upbound-system --from-file=creds=/tmp/automated-tests/case/creds.conf
 - command: ${KUBECTL} apply -f %s/examples/providerconfig.yaml`
 

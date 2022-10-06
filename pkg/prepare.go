@@ -103,9 +103,9 @@ func (p *Preparer) injectVariables(rootDirectory string) ([]string, error) {
 
 	var inputs []string
 	for _, f := range p.testFilePaths {
-		manifestData, err := ioutil.ReadFile(filepath.Join(rootDirectory, f))
+		manifestData, err := ioutil.ReadFile(f)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot read %s", filepath.Join(rootDirectory, f))
+			return nil, errors.Wrapf(err, "cannot read %s", f)
 		}
 		inputData, err := p.injectValues(string(manifestData), dataSourceMap)
 		if err != nil {
