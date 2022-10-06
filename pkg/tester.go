@@ -18,14 +18,6 @@ import (
 const (
 	manifestSeparator = "\n---\n"
 
-	priorStepsTemplate = `
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- command: ${KUBECTL} get namespace upbound-system > /dev/null 2>&1 || ${KUBECTL} create namespace upbound-system
-- command: ${KUBECTL} create secret generic provider-creds -n upbound-system --from-file=creds=/tmp/automated-tests/case/creds.conf
-- command: ${KUBECTL} apply -f %s/examples/providerconfig.yaml`
-
 	assertFileBase = `
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
@@ -65,12 +57,12 @@ type Tester struct {
 	manifests []*unstructured.Unstructured
 }
 
-func (t *Tester) ExecuteTests(rootDirectory, providerName string, skipProviderConfig bool) error {
+func (t *Tester) ExecuteTests() error {
 	assertManifest, err := t.generateAssertFiles()
 	if err != nil {
 		return errors.Wrap(err, "cannot generate assert files")
 	}
-	if err := t.writeKuttlFiles(assertManifest, filepath.Join(rootDirectory, providerName), skipProviderConfig); err != nil {
+	if err := t.writeKuttlFiles(assertManifest); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
 	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete /tmp/automated-tests/ --timeout %d 2>&1`, timeout))
@@ -110,18 +102,14 @@ func (t *Tester) generateAssertFiles() ([]string, error) {
 	return assertManifest, nil
 }
 
-func (t *Tester) writeKuttlFiles(assertManifest []string, workingDirectory string, skipProviderConfig bool) error {
-	kuttlInputs := make([]string, len(t.manifests)+1)
-	if !skipProviderConfig {
-		priorSteps := fmt.Sprintf(priorStepsTemplate, workingDirectory)
-		kuttlInputs[0] = priorSteps
-	}
+func (t *Tester) writeKuttlFiles(assertManifest []string) error {
+	kuttlInputs := make([]string, len(t.manifests))
 	for i, m := range t.manifests {
 		d, err := yaml.Marshal(m)
 		if err != nil {
 			return errors.Wrapf(err, "cannot marshal manifest %s with name %s", m.GroupVersionKind().String(), m.GetName())
 		}
-		kuttlInputs[i+1] = string(d)
+		kuttlInputs[i] = string(d)
 	}
 
 	if err := os.WriteFile(inputFilePath, []byte(strings.Join(kuttlInputs, manifestSeparator)), fs.ModePerm); err != nil {

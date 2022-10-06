@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io"
-	"io/fs"
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -21,7 +19,6 @@ import (
 
 const (
 	testDirectory = "/tmp/automated-tests/case"
-	credsFile     = "creds.conf"
 )
 
 var (
@@ -54,15 +51,12 @@ type Preparer struct {
 	dataSourcePath string
 }
 
-func (p *Preparer) PrepareManifests(rootDirectory, providerCredentials string) ([]*unstructured.Unstructured, error) {
+func (p *Preparer) PrepareManifests() ([]*unstructured.Unstructured, error) {
 	if err := os.MkdirAll(testDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", testDirectory)
 	}
-	if err := os.WriteFile(filepath.Join(testDirectory, credsFile), []byte(providerCredentials), fs.ModePerm); err != nil {
-		return nil, errors.Wrap(err, "cannot write credentials file")
-	}
 
-	manifestData, err := p.injectVariables(rootDirectory)
+	manifestData, err := p.injectVariables()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot inject variables")
 	}
@@ -89,7 +83,7 @@ func (p *Preparer) PrepareManifests(rootDirectory, providerCredentials string) (
 	return manifests, nil
 }
 
-func (p *Preparer) injectVariables(rootDirectory string) ([]string, error) {
+func (p *Preparer) injectVariables() ([]string, error) {
 	dataSourceMap := make(map[string]string)
 	if p.dataSourcePath != "" {
 		dataSource, err := ioutil.ReadFile(p.dataSourcePath)

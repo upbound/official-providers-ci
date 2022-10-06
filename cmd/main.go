@@ -24,10 +24,7 @@ func main() {
 			"'provider-aws/examples/s3/bucket.yaml,provider-gcp/examples/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
 			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
-		providerName = app.Flag("provider", "The provider name to run the tests.\n"+
-			"If this option is not set, 'PROVIDER_NAME' env var is used as default.").Envar("PROVIDER_NAME").String()
-		dataSourcePath     = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
-		skipProviderConfig = app.Flag("skip-provider-config", "Skip ProviderConfig creation.").Bool()
+		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -44,18 +41,8 @@ func main() {
 	}
 
 	o := &pkg.AutomatedTestOptions{
-		ExamplePaths:       examplePaths,
-		ProviderName:       *providerName,
-		RootDirectory:      cd,
-		DataSourcePath:     *dataSourcePath,
-		SkipProviderConfig: *skipProviderConfig,
+		ExamplePaths:   examplePaths,
+		DataSourcePath: *dataSourcePath,
 	}
-	providerCredsEnv := fmt.Sprintf("%s_CREDS", strings.ToUpper(strings.ReplaceAll(o.ProviderName, "-", "_")))
-	o.ProviderCredentials = os.Getenv(providerCredsEnv)
-
-	if o.DataSourcePath == "" {
-		o.DataSourcePath = filepath.Join(o.RootDirectory, "testing/testdata/datasource.yaml")
-	}
-
 	kingpin.FatalIfError(pkg.RunTest(o), "cannot run automated tests successfully")
 }
