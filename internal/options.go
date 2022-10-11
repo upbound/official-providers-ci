@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 type AutomatedTestOptions struct {
 	ExamplePaths   []string
