@@ -1,0 +1,16 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: {{ .TestCase.Timeout }}
+commands:
+- script: if [ -f {{ .Options.HooksDirectory }}/before.sh ]; then {{ .Options.HooksDirectory }}/before.sh; else echo "No before hook provided..."; fi
+{{- if not .Options.Composite }}
+- command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
+{{- end }}
+{{- range $name, $example := .Examples }}
+{{- if $example.Namespace }}
+- command: ${KUBECTL} wait {{ $name }} --for=condition={{ $example.WaitCondition }} --timeout 10s -n {{ $example.Namespace }}
+{{- else }}
+- command: ${KUBECTL} wait {{ $name }} --for=condition={{ $example.WaitCondition }} --timeout 10s
+{{- end }}
+{{- end }}
+- script: if [ -f {{ .Options.HooksDirectory }}/after.sh ]; then {{ .Options.HooksDirectory }}/after.sh; else echo "No after hook provided..."; fi

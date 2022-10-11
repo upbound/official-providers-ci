@@ -1,0 +1,4 @@
+{{ range $name, $example := .Examples -}}
+---
+{{ $example.Manifest }}
+{{- end }}

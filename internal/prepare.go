@@ -3,16 +3,16 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"regexp"
+	"sigs.k8s.io/yaml"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )

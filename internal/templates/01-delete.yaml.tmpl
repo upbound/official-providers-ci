@@ -1,0 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+{{- if .Options.Composite }}
+- command: kubectl delete claim --all --all-namespaces
+- command: kubectl delete composite --all
+- command: kubectl wait managed --all --for=delete
+{{- else }}
+- command: ${KUBECTL} delete managed --all
+{{- end }}

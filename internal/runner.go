@@ -1,10 +1,12 @@
 package internal
 
 import (
-	"github.com/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
+
+	"github.com/upbound/uptest/internal/config"
 )
 
-func RunTest(o *AutomatedTestOptions) error {
+func RunTest(o *config.AutomatedTest) error {
 	// Read examples and inject data source values to manifests
 	manifests, err := NewPreparer(o.ExamplePaths, WithDataSource(o.DataSourcePath)).PrepareManifests()
 	if err != nil {
@@ -12,7 +14,7 @@ func RunTest(o *AutomatedTestOptions) error {
 	}
 
 	// Prepare assert environment and run tests
-	if err := NewTester(manifests).ExecuteTests(); err != nil {
+	if err := NewTester(manifests, o).ExecuteTests(); err != nil {
 		return errors.Wrap(err, "cannot execute tests")
 	}
 

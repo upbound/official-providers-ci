@@ -9,6 +9,7 @@ import (
 	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/upbound/uptest/internal"
+	"github.com/upbound/uptest/internal/config"
 )
 
 func main() {
@@ -25,6 +26,9 @@ func main() {
 			"The comma separated resources are used as test inputs.\n"+
 			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
 		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		hooksDirectory = app.Flag("hooks-directory", "Path to hooks directory.").Default(filepath.Join(cd, "test/hooks")).String()
+		defaultTimeout = app.Flag("default-timeout", "Default timeout in seconds for the test.").Default("1200").Int()
+		composite      = app.Flag("claim-or-composite", "Resource to test is either claim or composite instead of a managed resource").Bool()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -40,9 +44,13 @@ func main() {
 		return
 	}
 
-	o := &internal.AutomatedTestOptions{
+	o := &config.AutomatedTest{
 		ExamplePaths:   examplePaths,
 		DataSourcePath: *dataSourcePath,
+		HooksDirectory: *hooksDirectory,
+		Composite:      *composite,
+		DefaultTimeout: *defaultTimeout,
 	}
+
 	kingpin.FatalIfError(internal.RunTest(o), "cannot run automated tests successfully")
 }
