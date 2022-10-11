@@ -1,0 +1,9 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: {{ .TestCase.Timeout }}
+commands:
+{{- if .Options.Composite }}
+- command: ${KUBECTL} wait claim --all --all-namespaces --for=delete
+- command: ${KUBECTL} wait composite --all --for=delete
+{{- end }}
+- command: ${KUBECTL} wait managed --all --for=delete

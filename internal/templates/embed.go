@@ -13,3 +13,7 @@ var assertFileTemplate string
 // deleteFileTemplate is the template for the delete file.
 //go:embed 01-delete.yaml.tmpl
 var deleteFileTemplate string
+
+// assertDeletedFileTemplate is the template for delete assert file.
+//go:embed 01-assert.yaml.tmpl
+var assertDeletedFileTemplate string

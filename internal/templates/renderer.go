@@ -13,6 +13,7 @@ var fileTemplates = map[string]string{
 	"00-apply.yaml":  inputFileTemplate,
 	"00-assert.yaml": assertFileTemplate,
 	"01-delete.yaml": deleteFileTemplate,
+	"01-assert.yaml": assertDeletedFileTemplate,
 }
 
 type TestCaseRenderer struct {
