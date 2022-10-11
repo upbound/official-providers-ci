@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/upbound/official-providers/testing/pkg"
+	"github.com/upbound/uptest/internal"
 )
 
 func main() {
@@ -40,9 +40,9 @@ func main() {
 		return
 	}
 
-	o := &pkg.AutomatedTestOptions{
+	o := &internal.AutomatedTestOptions{
 		ExamplePaths:   examplePaths,
 		DataSourcePath: *dataSourcePath,
 	}
-	kingpin.FatalIfError(pkg.RunTest(o), "cannot run automated tests successfully")
+	kingpin.FatalIfError(internal.RunTest(o), "cannot run automated tests successfully")
 }
