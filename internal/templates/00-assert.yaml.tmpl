@@ -2,15 +2,19 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
-- script: if [ -f {{ .Options.HooksDirectory }}/pre.sh ]; then {{ .Options.HooksDirectory }}/pre.sh; else echo "No pre hook provided..."; fi
-{{- if not .Options.Composite }}
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
+{{- range $resource := .Resources }}
+{{- if $resource.HooksDirPath }}
+- script: if [ -f {{ $resource.HooksDirPath }}/pre.sh ]; then {{ $resource.HooksDirPath }}/pre.sh; else echo "No pre hook provided..."; fi
 {{- end }}
-{{- range $name, $example := .Examples }}
-{{- if $example.Namespace }}
-- command: ${KUBECTL} wait {{ $name }} --for=condition={{ $example.WaitCondition }} --timeout 10s -n {{ $example.Namespace }}
+{{- range $condition := $resource.Conditions }}
+{{- if $resource.Namespace }}
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s --namespace {{ $resource.Namespace }}
 {{- else }}
-- command: ${KUBECTL} wait {{ $name }} --for=condition={{ $example.WaitCondition }} --timeout 10s
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
 {{- end }}
 {{- end }}
-- script: if [ -f {{ .Options.HooksDirectory }}/post.sh ]; then {{ .Options.HooksDirectory }}/post.sh; else echo "No post hook provided..."; fi
+{{- if $resource.HooksDirPath }}
+- script: if [ -f {{ $resource.HooksDirPath }}/post.sh ]; then {{ $resource.HooksDirPath }}/post.sh; else echo "No post hook provided..."; fi
+{{- end }}
+{{- end }}

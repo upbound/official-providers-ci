@@ -1,9 +1,10 @@
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-{{- if .Options.Composite }}
-- command: ${KUBECTL} delete claim --all --all-namespaces --wait=false
-- command: ${KUBECTL} delete composite --all --wait=false
+{{- range $resource := .Resources }}
+{{- if $resource.Namespace }}
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false --namespace {{ $resource.Namespace }}
 {{- else }}
-- command: ${KUBECTL} delete managed --all --wait=false
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false
+{{- end }}
 {{- end }}

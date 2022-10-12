@@ -16,25 +16,13 @@ var fileTemplates = map[string]string{
 	"01-assert.yaml": assertDeletedFileTemplate,
 }
 
-type TestCaseRenderer struct {
-	options *config.AutomatedTest
-}
-
-func NewRenderer(opts *config.AutomatedTest) *TestCaseRenderer {
-	return &TestCaseRenderer{
-		options: opts,
-	}
-}
-
-func (r *TestCaseRenderer) Render(tc *config.TestCase, examples map[string]config.Example) (map[string]string, error) {
+func Render(tc *config.TestCase, resources []config.Resource) (map[string]string, error) {
 	data := struct {
-		Examples map[string]config.Example
-		Options  config.AutomatedTest
-		TestCase config.TestCase
+		Resources []config.Resource
+		TestCase  config.TestCase
 	}{
-		Examples: examples,
-		Options:  *r.options,
-		TestCase: *tc,
+		Resources: resources,
+		TestCase:  *tc,
 	}
 
 	res := make(map[string]string, len(fileTemplates))

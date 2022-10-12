@@ -29,11 +29,11 @@ func main() {
 			"If this option is not set, 'MANIFEST_LIST' env var is used as default.").Envar("MANIFEST_LIST").String()
 		dataSourcePath        = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
 		defaultHooksDirectory = e2e.Flag("default-hooks-directory", "Path to hooks directory for default hooks to run for all examples.\n"+
-			"This could be overridden per resource using \"upjet.upbound.io/hooks-directory\" annotation.").String()
+			"This could be overridden per resource using \"uptest.upbound.io/hooks-directory\" annotation.").String()
 		defaultTimeout = e2e.Flag("default-timeout", "Default timeout in seconds for the test.\n"+
-			"Timeout could be overridden per resource using \"upjet.upbound.io/timeout\" annotation.").Default("1200").Int()
+			"Timeout could be overridden per resource using \"uptest.upbound.io/timeout\" annotation.").Default("1200").Int()
 		defaultConditions = e2e.Flag("default-conditions", "Comma seperated list of default conditions to wait for a successful test.\n"+
-			"Conditions could be overridden per resource using \"upjet.upbound.io/conditions\" annotation.").Default("Ready").String()
+			"Conditions could be overridden per resource using \"uptest.upbound.io/conditions\" annotation.").Default("Ready").String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -49,13 +49,20 @@ func main() {
 		return
 	}
 
+	defaultHooksPath := ""
+	if *defaultHooksDirectory != "" {
+		defaultHooksPath, err = filepath.Abs(*defaultHooksDirectory)
+		if err != nil {
+			kingpin.FatalIfError(err, "cannot get absolute path of default hooks directory")
+		}
+	}
 	o := &config.AutomatedTest{
-		ExamplePaths:          examplePaths,
-		DataSourcePath:        *dataSourcePath,
-		DefaultHooksDirectory: *defaultHooksDirectory,
-		DefaultConditions:     strings.Split(*defaultConditions, ","),
-		DefaultTimeout:        *defaultTimeout,
+		ManifestPaths:       examplePaths,
+		DataSourcePath:      *dataSourcePath,
+		DefaultHooksDirPath: defaultHooksPath,
+		DefaultConditions:   strings.Split(*defaultConditions, ","),
+		DefaultTimeout:      *defaultTimeout,
 	}
 
-	kingpin.FatalIfError(internal.RunTest(o), "cannot run automated tests successfully")
+	kingpin.FatalIfError(internal.RunTest(o), "cannot run e2e tests successfully")
 }
