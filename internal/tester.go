@@ -34,7 +34,8 @@ func (t *Tester) ExecuteTests() error {
 	if err := t.writeKuttlFiles(); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete /tmp/automated-tests/ --timeout %d 2>&1`, t.options.DefaultTimeout))
+	fmt.Println("Running kuttl tests at " + testDirectory)
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete %s --timeout %d 2>&1`, testDirectory, t.options.DefaultTimeout))
 	stdout, _ := cmd.StdoutPipe()
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "cannot start kuttl")
@@ -113,7 +114,7 @@ func (t *Tester) writeKuttlFiles() error {
 	}
 
 	for k, v := range files {
-		if err := os.WriteFile(filepath.Join(testDirectory, k), []byte(v), fs.ModePerm); err != nil {
+		if err := os.WriteFile(filepath.Join(caseDirectory, k), []byte(v), fs.ModePerm); err != nil {
 			return errors.Wrapf(err, "cannot write file %q", k)
 		}
 	}

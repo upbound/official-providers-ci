@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sigs.k8s.io/yaml"
 	"strings"
@@ -17,8 +18,9 @@ import (
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-const (
-	testDirectory = "/tmp/automated-tests/case"
+var (
+	testDirectory = filepath.Join(os.TempDir(), "uptest-e2e")
+	caseDirectory = filepath.Join(testDirectory, "case")
 )
 
 var (
@@ -52,8 +54,8 @@ type Preparer struct {
 }
 
 func (p *Preparer) PrepareManifests() ([]*unstructured.Unstructured, error) {
-	if err := os.MkdirAll(testDirectory, os.ModePerm); err != nil {
-		return nil, errors.Wrapf(err, "cannot create directory %s", testDirectory)
+	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
+		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
 
 	manifestData, err := p.injectVariables()
