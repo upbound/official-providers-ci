@@ -1,11 +1,11 @@
 package config
 
 type AutomatedTest struct {
-	ExamplePaths   []string
-	HooksDirectory string
-	DataSourcePath string
-	Composite      bool
-	DefaultTimeout int
+	ExamplePaths          []string
+	DataSourcePath        string
+	DefaultHooksDirectory string
+	DefaultConditions     []string
+	DefaultTimeout        int
 }
 
 type Example struct {

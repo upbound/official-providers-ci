@@ -78,10 +78,6 @@ func (t *Tester) prepareConfig() (*config.TestCase, map[string]config.Example, e
 			WaitCondition: "Test",
 		}
 
-		if t.options.Composite {
-			example.WaitCondition = "Ready"
-		}
-
 		if v, ok := m.GetAnnotations()["upjet.upbound.io/timeout"]; ok {
 			example.Timeout, err = strconv.Atoi(v)
 			if err != nil {

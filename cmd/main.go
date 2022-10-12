@@ -19,21 +19,26 @@ func main() {
 	}
 
 	var (
-		app         = kingpin.New("uptest", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
-		exampleList = app.Flag("example-list", "List of example manifests. Value of this option will be used to trigger/configure the tests."+
+		app = kingpin.New("uptest", "Automated Test Tool for Upbound Official Providers").DefaultEnvars()
+
+		e2e          = app.Command("e2e", "Run e2e tests for manifests by applying them to a control plane and waiting until a given condition is met.")
+		manifestList = e2e.Arg("manifest-list", "List of manifests. Value of this option will be used to trigger/configure the tests."+
 			"The possible usage:\n"+
 			"'provider-aws/examples/s3/bucket.yaml,provider-gcp/examples/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
-			"If this option is not set, 'EXAMPLE_LIST' env var is used as default.").Envar("EXAMPLE_LIST").String()
-		dataSourcePath = app.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
-		hooksDirectory = app.Flag("hooks-directory", "Path to hooks directory.").Default(filepath.Join(cd, "test/hooks")).String()
-		defaultTimeout = app.Flag("default-timeout", "Default timeout in seconds for the test.").Default("1200").Int()
-		composite      = app.Flag("claim-or-composite", "Resource to test is either claim or composite instead of a managed resource").Bool()
+			"If this option is not set, 'MANIFEST_LIST' env var is used as default.").Envar("MANIFEST_LIST").String()
+		dataSourcePath        = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		defaultHooksDirectory = e2e.Flag("default-hooks-directory", "Path to hooks directory for default hooks to run for all examples.\n"+
+			"This could be overridden per resource using \"upjet.upbound.io/hooks-directory\" annotation.").String()
+		defaultTimeout = e2e.Flag("default-timeout", "Default timeout in seconds for the test.\n"+
+			"Timeout could be overridden per resource using \"upjet.upbound.io/timeout\" annotation.").Default("1200").Int()
+		defaultConditions = e2e.Flag("default-conditions", "Comma seperated list of default conditions to wait for a successful test.\n"+
+			"Conditions could be overridden per resource using \"upjet.upbound.io/conditions\" annotation.").Default("Ready").String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	var examplePaths []string
-	for _, e := range strings.Split(*exampleList, ",") {
+	for _, e := range strings.Split(*manifestList, ",") {
 		if e == "" {
 			continue
 		}
@@ -45,11 +50,11 @@ func main() {
 	}
 
 	o := &config.AutomatedTest{
-		ExamplePaths:   examplePaths,
-		DataSourcePath: *dataSourcePath,
-		HooksDirectory: *hooksDirectory,
-		Composite:      *composite,
-		DefaultTimeout: *defaultTimeout,
+		ExamplePaths:          examplePaths,
+		DataSourcePath:        *dataSourcePath,
+		DefaultHooksDirectory: *defaultHooksDirectory,
+		DefaultConditions:     strings.Split(*defaultConditions, ","),
+		DefaultTimeout:        *defaultTimeout,
 	}
 
 	kingpin.FatalIfError(internal.RunTest(o), "cannot run automated tests successfully")
