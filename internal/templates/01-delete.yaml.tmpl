@@ -1,0 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+{{- range $resource := .Resources }}
+{{- if $resource.Namespace }}
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false --namespace {{ $resource.Namespace }}
+{{- else }}
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false
+{{- end }}
+{{- end }}

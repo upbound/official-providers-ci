@@ -1,0 +1,20 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: {{ .TestCase.Timeout }}
+commands:
+- command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
+{{- range $resource := .Resources }}
+{{- if $resource.PreAssertScriptPath }}
+- command: {{ $resource.PreAssertScriptPath }}
+{{- end }}
+{{- range $condition := $resource.Conditions }}
+{{- if $resource.Namespace }}
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s --namespace {{ $resource.Namespace }}
+{{- else }}
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
+{{- end }}
+{{- end }}
+{{- if $resource.PostAssertScriptPath }}
+- command: {{ $resource.PostAssertScriptPath }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,15 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: {{ .TestCase.Timeout }}
+commands:
+{{- range $resource := .Resources }}
+{{- if $resource.Namespace }}
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
+{{- else }}
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
+{{- end }}
+{{- end }}
+- command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
+{{- if .TestCase.TeardownScriptPath }}
+- command: {{ .TestCase.TeardownScriptPath }}
+{{- end }}

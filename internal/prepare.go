@@ -3,22 +3,24 @@ package internal
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"regexp"
+	"sigs.k8s.io/yaml"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
-const (
-	testDirectory = "/tmp/automated-tests/case"
+var (
+	testDirectory = filepath.Join(os.TempDir(), "uptest-e2e")
+	caseDirectory = filepath.Join(testDirectory, "case")
 )
 
 var (
@@ -51,18 +53,19 @@ type Preparer struct {
 	dataSourcePath string
 }
 
-func (p *Preparer) PrepareManifests() ([]*unstructured.Unstructured, error) {
-	if err := os.MkdirAll(testDirectory, os.ModePerm); err != nil {
-		return nil, errors.Wrapf(err, "cannot create directory %s", testDirectory)
+func (p *Preparer) PrepareManifests() (map[string]*unstructured.Unstructured, error) {
+	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
+		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
 
-	manifestData, err := p.injectVariables()
+	injectedFiles, err := p.injectVariables()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot inject variables")
 	}
-	var manifests []*unstructured.Unstructured
-	for _, file := range manifestData {
-		decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewBufferString(file), 1024)
+
+	manifests := make(map[string]*unstructured.Unstructured, len(injectedFiles))
+	for path, data := range injectedFiles {
+		decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewBufferString(data), 1024)
 		for {
 			u := &unstructured.Unstructured{}
 			if err := decoder.Decode(&u); err != nil {
@@ -76,14 +79,14 @@ func (p *Preparer) PrepareManifests() ([]*unstructured.Unstructured, error) {
 					fmt.Printf("Skipping %s with name %s since it requires the following manual intervention: %s\n", u.GroupVersionKind().String(), u.GetName(), v)
 					continue
 				}
-				manifests = append(manifests, u)
+				manifests[path] = u
 			}
 		}
 	}
 	return manifests, nil
 }
 
-func (p *Preparer) injectVariables() ([]string, error) {
+func (p *Preparer) injectVariables() (map[string]string, error) {
 	dataSourceMap := make(map[string]string)
 	if p.dataSourcePath != "" {
 		dataSource, err := ioutil.ReadFile(p.dataSourcePath)
@@ -95,7 +98,7 @@ func (p *Preparer) injectVariables() ([]string, error) {
 		}
 	}
 
-	var inputs []string
+	inputs := make(map[string]string, len(p.testFilePaths))
 	for _, f := range p.testFilePaths {
 		manifestData, err := ioutil.ReadFile(f)
 		if err != nil {
@@ -105,7 +108,7 @@ func (p *Preparer) injectVariables() ([]string, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot inject data source values")
 		}
-		inputs = append(inputs, inputData)
+		inputs[f] = inputData
 	}
 	return inputs, nil
 }

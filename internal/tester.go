@@ -3,72 +3,41 @@ package internal
 import (
 	"bufio"
 	"fmt"
+	"github.com/upbound/uptest/internal/templates"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
+
+	"github.com/upbound/uptest/internal/config"
 )
 
-const (
-	manifestSeparator = "\n---\n"
-
-	assertFileBase = `
-apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-timeout: %s
-commands:
-- command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite`
-
-	assertStatementTemplate = "- command: ${KUBECTL} wait %s --for=condition=Test --timeout 10s"
-
-	cleanupSteps = `
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-- command: ${KUBECTL} delete managed --all
-`
-
-	inputFileName  = "00-apply.yaml"
-	assertFileName = "00-assert.yaml"
-	deleteFileName = "01-delete.yaml"
-)
-
-var (
-	inputFilePath  = filepath.Join(testDirectory, inputFileName)
-	assertFilePath = filepath.Join(testDirectory, assertFileName)
-	deleteFilePath = filepath.Join(testDirectory, deleteFileName)
-
-	timeout = 1200
-)
-
-func NewTester(manifests []*unstructured.Unstructured) *Tester {
+func NewTester(manifests map[string]*unstructured.Unstructured, opts *config.AutomatedTest) *Tester {
 	return &Tester{
+		options:   opts,
 		manifests: manifests,
 	}
 }
 
 type Tester struct {
-	manifests []*unstructured.Unstructured
+	options   *config.AutomatedTest
+	manifests map[string]*unstructured.Unstructured
 }
 
 func (t *Tester) ExecuteTests() error {
-	assertManifest, err := t.generateAssertFiles()
-	if err != nil {
-		return errors.Wrap(err, "cannot generate assert files")
-	}
-	if err := t.writeKuttlFiles(assertManifest); err != nil {
+	if err := t.writeKuttlFiles(); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete /tmp/automated-tests/ --timeout %d 2>&1`, timeout))
+	fmt.Println("Running kuttl tests at " + testDirectory)
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete %s --timeout %d 2>&1`, testDirectory, t.options.DefaultTimeout))
 	stdout, _ := cmd.StdoutPipe()
-	err = cmd.Start()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "cannot start kuttl")
 	}
 	sc := bufio.NewScanner(stdout)
@@ -79,47 +48,84 @@ func (t *Tester) ExecuteTests() error {
 	return errors.Wrap(cmd.Wait(), "kuttl failed")
 }
 
-func (t *Tester) generateAssertFiles() ([]string, error) {
-	assertManifest := []string{assertFileBase}
-	for _, m := range t.manifests {
+func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
+	tc := &config.TestCase{
+		Timeout:            t.options.DefaultTimeout,
+		SetupScriptPath:    t.options.SetupScriptPath,
+		TeardownScriptPath: t.options.TeardownScriptPath,
+	}
+	examples := make([]config.Resource, 0, len(t.manifests))
+
+	for fp, m := range t.manifests {
 		if m.GroupVersionKind().String() == "/v1, Kind=Secret" {
 			continue
 		}
-		assertManifest = append(assertManifest, fmt.Sprintf(assertStatementTemplate,
-			fmt.Sprintf("%s.%s/%s", strings.ToLower(m.GroupVersionKind().Kind),
-				strings.ToLower(m.GroupVersionKind().Group), m.GetName())))
-		if v, ok := m.GetAnnotations()["upjet.upbound.io/timeout"]; ok {
-			vint, err := strconv.Atoi(v)
-			if err != nil {
-				return nil, errors.Wrap(err, "timeout value is not valid")
-			}
-			if vint > timeout {
-				timeout = vint
-			}
-		}
-	}
-	assertManifest[0] = fmt.Sprintf(assertManifest[0], strconv.Itoa(timeout))
-	return assertManifest, nil
-}
 
-func (t *Tester) writeKuttlFiles(assertManifest []string) error {
-	kuttlInputs := make([]string, len(t.manifests))
-	for i, m := range t.manifests {
+		kg := strings.ToLower(m.GroupVersionKind().Kind + "." + m.GroupVersionKind().Group)
 		d, err := yaml.Marshal(m)
 		if err != nil {
-			return errors.Wrapf(err, "cannot marshal manifest %s with name %s", m.GroupVersionKind().String(), m.GetName())
+			return nil, nil, errors.Wrapf(err, "cannot marshal manifest for \"%s/%s\"", kg, m.GetName())
 		}
-		kuttlInputs[i] = string(d)
+
+		example := config.Resource{
+			Name:       m.GetName(),
+			Namespace:  m.GetNamespace(),
+			KindGroup:  kg,
+			Manifest:   string(d),
+			Timeout:    t.options.DefaultTimeout,
+			Conditions: t.options.DefaultConditions,
+		}
+
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyTimeout]; ok {
+			example.Timeout, err = strconv.Atoi(v)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "timeout value is not valid")
+			}
+			if example.Timeout > tc.Timeout {
+				tc.Timeout = example.Timeout
+			}
+		}
+
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyConditions]; ok {
+			example.Conditions = strings.Split(v, ",")
+		}
+
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyPreAssertHook]; ok {
+			example.PreAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for pre assert hook")
+			}
+		}
+
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyPostAssertHook]; ok {
+			example.PostAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for post assert hook")
+			}
+		}
+
+		examples = append(examples, example)
 	}
 
-	if err := os.WriteFile(inputFilePath, []byte(strings.Join(kuttlInputs, manifestSeparator)), fs.ModePerm); err != nil {
-		return errors.Wrapf(err, "cannot write input manifests to %s", inputFilePath)
+	return tc, examples, nil
+}
+
+func (t *Tester) writeKuttlFiles() error {
+	tc, examples, err := t.prepareConfig()
+	if err != nil {
+		return errors.Wrap(err, "cannot build examples config")
 	}
-	if err := os.WriteFile(assertFilePath, []byte(strings.Join(assertManifest, "\n")), fs.ModePerm); err != nil {
-		return errors.Wrapf(err, "cannot write assertion manifests to %s", assertFilePath)
+
+	files, err := templates.Render(tc, examples)
+	if err != nil {
+		return errors.Wrap(err, "cannot render kuttl templates")
 	}
-	if err := os.WriteFile(deleteFilePath, []byte(cleanupSteps), fs.ModePerm); err != nil {
-		return errors.Wrapf(err, "cannot write deletion manifest to %s", deleteFilePath)
+
+	for k, v := range files {
+		if err := os.WriteFile(filepath.Join(caseDirectory, k), []byte(v), fs.ModePerm); err != nil {
+			return errors.Wrapf(err, "cannot write file %q", k)
+		}
 	}
+
 	return nil
 }
