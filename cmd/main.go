@@ -27,9 +27,10 @@ func main() {
 			"'provider-aws/examples/s3/bucket.yaml,provider-gcp/examples/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
 			"If this option is not set, 'MANIFEST_LIST' env var is used as default.").Envar("MANIFEST_LIST").String()
-		dataSourcePath        = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
-		defaultHooksDirectory = e2e.Flag("default-hooks-directory", "Path to hooks directory for default hooks to run for all examples.\n"+
-			"This could be overridden per resource using \"uptest.upbound.io/hooks-directory\" annotation.").String()
+		dataSourcePath = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		setupScript    = e2e.Flag("setup-script", "Script that will be executed before running tests.").Default("").String()
+		teardownScript = e2e.Flag("teardown-script", "Script that will be executed after running tests.").Default("").String()
+
 		defaultTimeout = e2e.Flag("default-timeout", "Default timeout in seconds for the test.\n"+
 			"Timeout could be overridden per resource using \"uptest.upbound.io/timeout\" annotation.").Default("1200").Int()
 		defaultConditions = e2e.Flag("default-conditions", "Comma seperated list of default conditions to wait for a successful test.\n"+
@@ -49,19 +50,28 @@ func main() {
 		return
 	}
 
-	defaultHooksPath := ""
-	if *defaultHooksDirectory != "" {
-		defaultHooksPath, err = filepath.Abs(*defaultHooksDirectory)
+	setupPath := ""
+	if *setupScript != "" {
+		setupPath, err = filepath.Abs(*setupScript)
 		if err != nil {
-			kingpin.FatalIfError(err, "cannot get absolute path of default hooks directory")
+			kingpin.FatalIfError(err, "cannot get absolute path of setup script")
+		}
+	}
+
+	teardownPath := ""
+	if *teardownScript != "" {
+		teardownPath, err = filepath.Abs(*teardownScript)
+		if err != nil {
+			kingpin.FatalIfError(err, "cannot get absolute path of teardown script")
 		}
 	}
 	o := &config.AutomatedTest{
-		ManifestPaths:       examplePaths,
-		DataSourcePath:      *dataSourcePath,
-		DefaultHooksDirPath: defaultHooksPath,
-		DefaultConditions:   strings.Split(*defaultConditions, ","),
-		DefaultTimeout:      *defaultTimeout,
+		ManifestPaths:      examplePaths,
+		DataSourcePath:     *dataSourcePath,
+		SetupScriptPath:    setupPath,
+		TeardownScriptPath: teardownPath,
+		DefaultConditions:  strings.Split(*defaultConditions, ","),
+		DefaultTimeout:     *defaultTimeout,
 	}
 
 	kingpin.FatalIfError(internal.RunTest(o), "cannot run e2e tests successfully")

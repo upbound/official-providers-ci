@@ -4,8 +4,8 @@ timeout: {{ .TestCase.Timeout }}
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
 {{- range $resource := .Resources }}
-{{- if $resource.HooksDirPath }}
-- script: if [ -f {{ $resource.HooksDirPath }}/pre.sh ]; then {{ $resource.HooksDirPath }}/pre.sh; else echo "No pre hook provided..."; fi
+{{- if $resource.PreAssertScriptPath }}
+- command: {{ $resource.PreAssertScriptPath }}
 {{- end }}
 {{- range $condition := $resource.Conditions }}
 {{- if $resource.Namespace }}
@@ -14,7 +14,7 @@ commands:
 - command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
 {{- end }}
 {{- end }}
-{{- if $resource.HooksDirPath }}
-- script: if [ -f {{ $resource.HooksDirPath }}/post.sh ]; then {{ $resource.HooksDirPath }}/post.sh; else echo "No post hook provided..."; fi
+{{- if $resource.PostAssertScriptPath }}
+- command: {{ $resource.PostAssertScriptPath }}
 {{- end }}
 {{- end }}

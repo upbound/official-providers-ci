@@ -18,7 +18,7 @@ import (
 	"github.com/upbound/uptest/internal/config"
 )
 
-func NewTester(manifests []*unstructured.Unstructured, opts *config.AutomatedTest) *Tester {
+func NewTester(manifests map[string]*unstructured.Unstructured, opts *config.AutomatedTest) *Tester {
 	return &Tester{
 		options:   opts,
 		manifests: manifests,
@@ -27,7 +27,7 @@ func NewTester(manifests []*unstructured.Unstructured, opts *config.AutomatedTes
 
 type Tester struct {
 	options   *config.AutomatedTest
-	manifests []*unstructured.Unstructured
+	manifests map[string]*unstructured.Unstructured
 }
 
 func (t *Tester) ExecuteTests() error {
@@ -50,11 +50,13 @@ func (t *Tester) ExecuteTests() error {
 
 func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 	tc := &config.TestCase{
-		Timeout: t.options.DefaultTimeout,
+		Timeout:            t.options.DefaultTimeout,
+		SetupScriptPath:    t.options.SetupScriptPath,
+		TeardownScriptPath: t.options.TeardownScriptPath,
 	}
-	examples := make([]config.Resource, len(t.manifests))
+	examples := make([]config.Resource, 0, len(t.manifests))
 
-	for i, m := range t.manifests {
+	for fp, m := range t.manifests {
 		if m.GroupVersionKind().String() == "/v1, Kind=Secret" {
 			continue
 		}
@@ -66,13 +68,12 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 		}
 
 		example := config.Resource{
-			Name:         m.GetName(),
-			Namespace:    m.GetNamespace(),
-			KindGroup:    kg,
-			Manifest:     string(d),
-			Timeout:      t.options.DefaultTimeout,
-			HooksDirPath: t.options.DefaultHooksDirPath,
-			Conditions:   t.options.DefaultConditions,
+			Name:       m.GetName(),
+			Namespace:  m.GetNamespace(),
+			KindGroup:  kg,
+			Manifest:   string(d),
+			Timeout:    t.options.DefaultTimeout,
+			Conditions: t.options.DefaultConditions,
 		}
 
 		if v, ok := m.GetAnnotations()[config.AnnotationKeyTimeout]; ok {
@@ -85,18 +86,25 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 			}
 		}
 
-		if v, ok := m.GetAnnotations()[config.AnnotationKeyHooksDirectory]; ok {
-			example.HooksDirPath, err = filepath.Abs(v)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "cannot find absolute path for hooks directory")
-			}
-		}
-
 		if v, ok := m.GetAnnotations()[config.AnnotationKeyConditions]; ok {
 			example.Conditions = strings.Split(v, ",")
 		}
 
-		examples[i] = example
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyPreAssertHook]; ok {
+			example.PreAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for pre assert hook")
+			}
+		}
+
+		if v, ok := m.GetAnnotations()[config.AnnotationKeyPostAssertHook]; ok {
+			example.PostAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for post assert hook")
+			}
+		}
+
+		examples = append(examples, example)
 	}
 
 	return tc, examples, nil

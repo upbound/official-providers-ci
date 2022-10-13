@@ -35,8 +35,8 @@ func TestRender(t *testing.T) {
 		resources []config.Resource
 	}
 	type want struct {
-		want map[string]string
-		err  error
+		out map[string]string
+		err error
 	}
 	tests := map[string]struct {
 		args args
@@ -49,25 +49,22 @@ func TestRender(t *testing.T) {
 				},
 				resources: []config.Resource{
 					{
-						Name:         "example-bucket",
-						KindGroup:    "s3.aws.upbound.io",
-						Manifest:     bucketManifest,
-						HooksDirPath: "test/bucket-hooks",
-						Conditions:   []string{"Test"},
+						Name:       "example-bucket",
+						KindGroup:  "s3.aws.upbound.io",
+						Manifest:   bucketManifest,
+						Conditions: []string{"Test"},
 					},
 				},
 			},
 			want: want{
-				want: map[string]string{
+				out: map[string]string{
 					"00-apply.yaml": "---\n" + bucketManifest,
 					"00-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
-- script: if [ -f test/bucket-hooks/pre.sh ]; then test/bucket-hooks/pre.sh; else echo "No pre hook provided..."; fi
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: if [ -f test/bucket-hooks/post.sh ]; then test/bucket-hooks/post.sh; else echo "No post hook provided..."; fi
 `,
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
@@ -87,41 +84,45 @@ commands:
 		"SuccessMultipleResource": {
 			args: args{
 				tc: &config.TestCase{
-					Timeout: 10,
+					Timeout:            10,
+					SetupScriptPath:    "/tmp/setup.sh",
+					TeardownScriptPath: "/tmp/teardown.sh",
 				},
 				resources: []config.Resource{
 					{
-						Manifest:     bucketManifest,
-						Name:         "example-bucket",
-						KindGroup:    "s3.aws.upbound.io",
-						HooksDirPath: "test/bucket-hooks",
-						Conditions:   []string{"Test"},
+						Manifest:            bucketManifest,
+						Name:                "example-bucket",
+						KindGroup:           "s3.aws.upbound.io",
+						PreAssertScriptPath: "/tmp/bucket/pre-assert.sh",
+						Conditions:          []string{"Test"},
 					},
 					{
-						Name:         "test-cluster-claim",
-						KindGroup:    "cluster.gcp.platformref.upbound.io",
-						Namespace:    "upbound-system",
-						Manifest:     claimManifest,
-						HooksDirPath: "test/claim-hooks",
-						Conditions:   []string{"Ready", "Synced"},
+						Manifest:             claimManifest,
+						Name:                 "test-cluster-claim",
+						KindGroup:            "cluster.gcp.platformref.upbound.io",
+						Namespace:            "upbound-system",
+						PostAssertScriptPath: "/tmp/claim/post-assert.sh",
+						Conditions:           []string{"Ready", "Synced"},
 					},
 				},
 			},
 			want: want{
-				want: map[string]string{
-					"00-apply.yaml": "---\n" + bucketManifest + "---\n" + claimManifest,
+				out: map[string]string{
+					"00-apply.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: /tmp/setup.sh
+` + "---\n" + bucketManifest + "---\n" + claimManifest,
 					"00-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
-- script: if [ -f test/bucket-hooks/pre.sh ]; then test/bucket-hooks/pre.sh; else echo "No pre hook provided..."; fi
+- command: /tmp/bucket/pre-assert.sh
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: if [ -f test/bucket-hooks/post.sh ]; then test/bucket-hooks/post.sh; else echo "No post hook provided..."; fi
-- script: if [ -f test/claim-hooks/pre.sh ]; then test/claim-hooks/pre.sh; else echo "No pre hook provided..."; fi
 - command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Ready --timeout 10s --namespace upbound-system
 - command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Synced --timeout 10s --namespace upbound-system
-- script: if [ -f test/claim-hooks/post.sh ]; then test/claim-hooks/post.sh; else echo "No post hook provided..."; fi
+- command: /tmp/claim/post-assert.sh
 `,
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
@@ -136,6 +137,7 @@ commands:
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
 - command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=delete --timeout 10s --namespace upbound-system
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
+- command: /tmp/teardown.sh
 `,
 				},
 			},
@@ -147,7 +149,7 @@ commands:
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("Render(...): -want error, +got error:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.want, got); diff != "" {
+			if diff := cmp.Diff(tc.want.out, got); diff != "" {
 				t.Errorf("Render(...): -want, +got:\n%s", diff)
 			}
 		})

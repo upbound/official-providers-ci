@@ -2,16 +2,26 @@ package config
 
 const (
 	AnnotationKeyTimeout        = "uptest.upbound.io/timeout"
-	AnnotationKeyHooksDirectory = "uptest.upbound.io/hooks-directory"
 	AnnotationKeyConditions     = "uptest.upbound.io/conditions"
+	AnnotationKeyPreAssertHook  = "uptest.upbound.io/pre-assert-hook"
+	AnnotationKeyPostAssertHook = "uptest.upbound.io/post-assert-hook"
 )
 
 type AutomatedTest struct {
-	ManifestPaths       []string
-	DataSourcePath      string
-	DefaultTimeout      int
-	DefaultHooksDirPath string
-	DefaultConditions   []string
+	ManifestPaths  []string
+	DataSourcePath string
+
+	SetupScriptPath    string
+	TeardownScriptPath string
+
+	DefaultTimeout    int
+	DefaultConditions []string
+}
+
+type TestCase struct {
+	Timeout            int
+	SetupScriptPath    string
+	TeardownScriptPath string
 }
 
 type Resource struct {
@@ -20,11 +30,8 @@ type Resource struct {
 	KindGroup string
 	Manifest  string
 
-	Timeout      int
-	HooksDirPath string
-	Conditions   []string
-}
-
-type TestCase struct {
-	Timeout int
+	Timeout              int
+	Conditions           []string
+	PreAssertScriptPath  string
+	PostAssertScriptPath string
 }

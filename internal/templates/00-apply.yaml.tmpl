@@ -1,4 +1,10 @@
-{{ range $resource := .Resources -}}
+{{ if .TestCase.SetupScriptPath -}}
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: {{ .TestCase.SetupScriptPath }}
+{{ end }}
+{{- range $resource := .Resources -}}
 ---
 {{ $resource.Manifest }}
 {{- end }}
