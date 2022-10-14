@@ -3,31 +3,29 @@ package internal
 import (
 	"bufio"
 	"fmt"
-	"github.com/upbound/uptest/internal/templates"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/upbound/uptest/internal/config"
+	"github.com/upbound/uptest/internal/templates"
 )
 
-func NewTester(manifests map[string]*unstructured.Unstructured, opts *config.AutomatedTest) *Tester {
+func NewTester(ms []config.Manifest, opts *config.AutomatedTest) *Tester {
 	return &Tester{
 		options:   opts,
-		manifests: manifests,
+		manifests: ms,
 	}
 }
 
 type Tester struct {
 	options   *config.AutomatedTest
-	manifests map[string]*unstructured.Unstructured
+	manifests []config.Manifest
 }
 
 func (t *Tester) ExecuteTests() error {
@@ -56,27 +54,26 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 	}
 	examples := make([]config.Resource, 0, len(t.manifests))
 
-	for fp, m := range t.manifests {
-		if m.GroupVersionKind().String() == "/v1, Kind=Secret" {
+	for _, m := range t.manifests {
+		obj := m.Object
+		if obj.GroupVersionKind().String() == "/v1, Kind=Secret" {
 			continue
 		}
 
-		kg := strings.ToLower(m.GroupVersionKind().Kind + "." + m.GroupVersionKind().Group)
-		d, err := yaml.Marshal(m)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "cannot marshal manifest for \"%s/%s\"", kg, m.GetName())
-		}
+		kg := strings.ToLower(obj.GroupVersionKind().Kind + "." + obj.GroupVersionKind().Group)
 
 		example := config.Resource{
-			Name:       m.GetName(),
-			Namespace:  m.GetNamespace(),
+			Name:       obj.GetName(),
+			Namespace:  obj.GetNamespace(),
 			KindGroup:  kg,
-			Manifest:   string(d),
+			YAML:       m.YAML,
 			Timeout:    t.options.DefaultTimeout,
 			Conditions: t.options.DefaultConditions,
 		}
 
-		if v, ok := m.GetAnnotations()[config.AnnotationKeyTimeout]; ok {
+		var err error
+		annotations := obj.GetAnnotations()
+		if v, ok := annotations[config.AnnotationKeyTimeout]; ok {
 			example.Timeout, err = strconv.Atoi(v)
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "timeout value is not valid")
@@ -86,19 +83,19 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 			}
 		}
 
-		if v, ok := m.GetAnnotations()[config.AnnotationKeyConditions]; ok {
+		if v, ok := annotations[config.AnnotationKeyConditions]; ok {
 			example.Conditions = strings.Split(v, ",")
 		}
 
-		if v, ok := m.GetAnnotations()[config.AnnotationKeyPreAssertHook]; ok {
-			example.PreAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+		if v, ok := annotations[config.AnnotationKeyPreAssertHook]; ok {
+			example.PreAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(m.FilePath), filepath.Clean(v)))
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "cannot find absolute path for pre assert hook")
 			}
 		}
 
-		if v, ok := m.GetAnnotations()[config.AnnotationKeyPostAssertHook]; ok {
-			example.PostAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(fp), filepath.Clean(v)))
+		if v, ok := annotations[config.AnnotationKeyPostAssertHook]; ok {
+			example.PostAssertScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(m.FilePath), filepath.Clean(v)))
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "cannot find absolute path for post assert hook")
 			}

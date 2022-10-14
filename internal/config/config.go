@@ -1,5 +1,7 @@
 package config
 
+import "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 const (
 	AnnotationKeyTimeout        = "uptest.upbound.io/timeout"
 	AnnotationKeyConditions     = "uptest.upbound.io/conditions"
@@ -18,6 +20,12 @@ type AutomatedTest struct {
 	DefaultConditions []string
 }
 
+type Manifest struct {
+	FilePath string
+	Object   *unstructured.Unstructured
+	YAML     string
+}
+
 type TestCase struct {
 	Timeout            int
 	SetupScriptPath    string
@@ -28,7 +36,7 @@ type Resource struct {
 	Name      string
 	Namespace string
 	KindGroup string
-	Manifest  string
+	YAML      string
 
 	Timeout              int
 	Conditions           []string

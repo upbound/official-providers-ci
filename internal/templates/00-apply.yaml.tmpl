@@ -6,5 +6,5 @@ commands:
 {{ end }}
 {{- range $resource := .Resources -}}
 ---
-{{ $resource.Manifest }}
+{{ $resource.YAML }}
 {{- end }}

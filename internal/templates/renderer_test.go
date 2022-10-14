@@ -1,10 +1,12 @@
 package templates
 
 import (
+	"testing"
+
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
+	
 	"github.com/upbound/uptest/internal/config"
-	"testing"
 )
 
 const (
@@ -51,7 +53,7 @@ func TestRender(t *testing.T) {
 					{
 						Name:       "example-bucket",
 						KindGroup:  "s3.aws.upbound.io",
-						Manifest:   bucketManifest,
+						YAML:       bucketManifest,
 						Conditions: []string{"Test"},
 					},
 				},
@@ -90,14 +92,14 @@ commands:
 				},
 				resources: []config.Resource{
 					{
-						Manifest:            bucketManifest,
+						YAML:                bucketManifest,
 						Name:                "example-bucket",
 						KindGroup:           "s3.aws.upbound.io",
 						PreAssertScriptPath: "/tmp/bucket/pre-assert.sh",
 						Conditions:          []string{"Test"},
 					},
 					{
-						Manifest:             claimManifest,
+						YAML:                 claimManifest,
 						Name:                 "test-cluster-claim",
 						KindGroup:            "cluster.gcp.platformref.upbound.io",
 						Namespace:            "upbound-system",
