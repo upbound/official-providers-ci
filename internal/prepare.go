@@ -16,6 +16,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+
+	"github.com/upbound/uptest/internal/config"
 )
 
 var (
@@ -53,7 +55,7 @@ type Preparer struct {
 	dataSourcePath string
 }
 
-func (p *Preparer) PrepareManifests() (map[string]*unstructured.Unstructured, error) {
+func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
@@ -63,7 +65,7 @@ func (p *Preparer) PrepareManifests() (map[string]*unstructured.Unstructured, er
 		return nil, errors.Wrap(err, "cannot inject variables")
 	}
 
-	manifests := make(map[string]*unstructured.Unstructured, len(injectedFiles))
+	manifests := make([]config.Manifest, 0, len(injectedFiles))
 	for path, data := range injectedFiles {
 		decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewBufferString(data), 1024)
 		for {
@@ -79,7 +81,15 @@ func (p *Preparer) PrepareManifests() (map[string]*unstructured.Unstructured, er
 					fmt.Printf("Skipping %s with name %s since it requires the following manual intervention: %s\n", u.GroupVersionKind().String(), u.GetName(), v)
 					continue
 				}
-				manifests[path] = u
+				y, err := yaml.Marshal(u)
+				if err != nil {
+					return nil, errors.Wrapf(err, "cannot marshal manifest for \"%s/%s\"", u.GetObjectKind(), u.GetName())
+				}
+				manifests = append(manifests, config.Manifest{
+					FilePath: path,
+					Object:   u,
+					YAML:     string(y),
+				})
 			}
 		}
 	}
