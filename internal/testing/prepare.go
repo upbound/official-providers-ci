@@ -3,7 +3,7 @@ package testing
 import (
 	"bytes"
 	"fmt"
-	"github.com/upbound/provider-tools/internal/testing/config"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/config"
 	"io"
 	"math/rand"
 	"os"

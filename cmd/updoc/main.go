@@ -6,7 +6,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/spf13/afero"
 
-	"github.com/upbound/provider-tools/internal/docs"
+	"github.com/upbound/crossplane-provider-tools/internal/docs"
 )
 
 func main() {

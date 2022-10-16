@@ -3,8 +3,8 @@ package testing
 import (
 	"bufio"
 	"fmt"
-	"github.com/upbound/provider-tools/internal/testing/config"
-	"github.com/upbound/provider-tools/internal/testing/templates"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/config"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/templates"
 	"io/fs"
 	"os"
 	"os/exec"

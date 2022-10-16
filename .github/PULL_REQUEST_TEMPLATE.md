@@ -1,8 +1,8 @@
 <!--
-Thank you for helping to improve Crossplane Provider Tooling!
+Thank you for helping to improve Crossplane Provider Tools!
 
 Please read through https://git.io/fj2m9 if this is your first time opening a
-Crossplane Provider Tooling pull request. Find us in https://slack.crossplane.io/messages/dev if
+Crossplane Provider Tools pull request. Find us in https://slack.crossplane.io/messages/dev if
 you need any help contributing.
 -->
 
@@ -12,7 +12,7 @@ you need any help contributing.
 Briefly describe what this pull request does. Be sure to direct your reviewers'
 attention to anything that needs special consideration.
 
-We love pull requests that resolve an open Crossplane Provider Tooling issue. If yours does, you
+We love pull requests that resolve an open Crossplane Provider Tools issue. If yours does, you
 can uncomment the below line to indicate which issue your PR fixes, for example
 "Fixes #500":
 

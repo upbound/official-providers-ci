@@ -1,4 +1,4 @@
-module github.com/upbound/provider-tools
+module github.com/upbound/crossplane-provider-tools
 
 go 1.19
 

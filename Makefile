@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := provider-tools
+PROJECT_NAME := crossplane-provider-tools
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 PLATFORMS ?= linux_amd64 linux_arm64 darwin_amd64 darwin_arm64

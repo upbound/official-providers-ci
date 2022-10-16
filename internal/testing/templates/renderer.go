@@ -1,7 +1,7 @@
 package templates
 
 import (
-	"github.com/upbound/provider-tools/internal/testing/config"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/config"
 	"strings"
 	"text/template"
 

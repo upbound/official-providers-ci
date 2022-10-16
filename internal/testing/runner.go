@@ -2,7 +2,7 @@ package testing
 
 import (
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
-	"github.com/upbound/provider-tools/internal/testing/config"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/config"
 )
 
 func RunTest(o *config.AutomatedTest) error {

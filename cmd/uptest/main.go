@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/upbound/provider-tools/internal/testing"
-	"github.com/upbound/provider-tools/internal/testing/config"
+	"github.com/upbound/crossplane-provider-tools/internal/testing"
+	"github.com/upbound/crossplane-provider-tools/internal/testing/config"
 	"os"
 	"path/filepath"
 	"strings"
