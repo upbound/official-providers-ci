@@ -1,4 +1,10 @@
-# Provider Tools
+# Crossplane Provider Tools
+
+This repository contains several tools to aid Crossplane Provider development.
+* [Uptest](#uptest): Integration testing tool for all resources complaint with Crossplane
+  Resource Model (XRM).
+* [Updoc](#updoc): Indexer and uploader for documentation files to be shown in the Upbound
+  Marketplace.
 
 ## Uptest
 
@@ -67,6 +73,28 @@ of uptest e2e output. For example:
 
 ```shell
 Running kuttl tests at /var/folders/_5/jc7399qx6cn6t5535npv9z4c0000gn/T/uptest-e2e
+```
+
+## Updoc
+
+Updoc parses the given directory for markdown files, parses them and uploads an
+ordered index to given GCP bucket to be processed by Upbound Marketplace.
+
+### Example Usage
+
+Generate the index file.
+```console
+updoc generate --docs-dir=docs
+```
+
+Upload docs and the index file.
+```console
+updoc upload \
+  --docs-dir=docs \
+  --name=provider-aws \
+  --version=v0.17 \
+  --bucket-name=provider-docs-bucket \
+  --cdn-domain=https://someurl.upbound.io
 ```
 
 # Report a Bug
