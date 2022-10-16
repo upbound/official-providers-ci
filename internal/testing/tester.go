@@ -1,8 +1,10 @@
-package internal
+package testing
 
 import (
 	"bufio"
 	"fmt"
+	"github.com/upbound/provider-tools/internal/testing/config"
+	"github.com/upbound/provider-tools/internal/testing/templates"
 	"io/fs"
 	"os"
 	"os/exec"
@@ -11,9 +13,6 @@ import (
 	"strings"
 
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
-
-	"github.com/upbound/uptest/internal/config"
-	"github.com/upbound/uptest/internal/templates"
 )
 
 func NewTester(ms []config.Manifest, opts *config.AutomatedTest) *Tester {

@@ -1,9 +1,8 @@
-package internal
+package testing
 
 import (
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
-
-	"github.com/upbound/uptest/internal/config"
+	"github.com/upbound/provider-tools/internal/testing/config"
 )
 
 func RunTest(o *config.AutomatedTest) error {

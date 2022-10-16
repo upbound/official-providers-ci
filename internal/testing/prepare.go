@@ -1,10 +1,10 @@
-package internal
+package testing
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/upbound/provider-tools/internal/testing/config"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -16,8 +16,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/upbound/uptest/internal/config"
 )
 
 var (
@@ -28,8 +26,8 @@ var (
 var (
 	charset = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
-	dataSourceRegex = regexp.MustCompile("\\${data\\.(.*?)}")
-	randomStrRegex  = regexp.MustCompile("\\${Rand\\.(.*?)}")
+	dataSourceRegex = regexp.MustCompile(`\\${data\\.(.*?)}`)
+	randomStrRegex  = regexp.MustCompile(`\\${Rand\\.(.*?)}`)
 )
 
 func WithDataSource(path string) PreparerOption {
@@ -99,7 +97,7 @@ func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
 func (p *Preparer) injectVariables() (map[string]string, error) {
 	dataSourceMap := make(map[string]string)
 	if p.dataSourcePath != "" {
-		dataSource, err := ioutil.ReadFile(p.dataSourcePath)
+		dataSource, err := os.ReadFile(p.dataSourcePath)
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot read data source file")
 		}
@@ -110,7 +108,7 @@ func (p *Preparer) injectVariables() (map[string]string, error) {
 
 	inputs := make(map[string]string, len(p.testFilePaths))
 	for _, f := range p.testFilePaths {
-		manifestData, err := ioutil.ReadFile(f)
+		manifestData, err := os.ReadFile(f)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot read %s", f)
 		}

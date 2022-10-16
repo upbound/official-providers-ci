@@ -1,12 +1,11 @@
 package templates
 
 import (
+	"github.com/upbound/provider-tools/internal/testing/config"
 	"strings"
 	"text/template"
 
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
-
-	"github.com/upbound/uptest/internal/config"
 )
 
 var fileTemplates = map[string]string{

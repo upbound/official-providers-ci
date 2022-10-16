@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/upbound/provider-tools/internal/testing"
+	"github.com/upbound/provider-tools/internal/testing/config"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"gopkg.in/alecthomas/kingpin.v2"
-
-	"github.com/upbound/uptest/internal"
-	"github.com/upbound/uptest/internal/config"
 )
 
 func main() {
@@ -74,5 +73,5 @@ func main() {
 		DefaultTimeout:     *defaultTimeout,
 	}
 
-	kingpin.FatalIfError(internal.RunTest(o), "cannot run e2e tests successfully")
+	kingpin.FatalIfError(testing.RunTest(o), "cannot run e2e tests successfully")
 }

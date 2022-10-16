@@ -1,12 +1,11 @@
 package templates
 
 import (
+	"github.com/upbound/provider-tools/internal/testing/config"
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
-	
-	"github.com/upbound/uptest/internal/config"
 )
 
 const (
