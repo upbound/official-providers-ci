@@ -1,6 +1,6 @@
 module github.com/upbound/uptest
 
-go 1.18
+go 1.19
 
 require (
 	github.com/crossplane/crossplane-runtime v0.18.0
