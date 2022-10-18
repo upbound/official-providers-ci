@@ -21,16 +21,15 @@ import (
 )
 
 var (
-	testDirectory = filepath.Join(os.TempDir(), "uptest-e2e")
-	caseDirectory = filepath.Join(testDirectory, "case")
-)
-
-var (
 	charset = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 	dataSourceRegex = regexp.MustCompile("\\${data\\.(.*?)}")
 	randomStrRegex  = regexp.MustCompile("\\${Rand\\.(.*?)}")
+
+	caseDirectory = "case"
 )
+
+type PreparerOption func(*Preparer)
 
 func WithDataSource(path string) PreparerOption {
 	return func(p *Preparer) {
@@ -38,11 +37,16 @@ func WithDataSource(path string) PreparerOption {
 	}
 }
 
-type PreparerOption func(*Preparer)
+func WithTestDirectory(path string) PreparerOption {
+	return func(p *Preparer) {
+		p.testDirectory = path
+	}
+}
 
 func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
 	p := &Preparer{
 		testFilePaths: testFilePaths,
+		testDirectory: os.TempDir(),
 	}
 	for _, f := range opts {
 		f(p)
@@ -53,9 +57,11 @@ func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
 type Preparer struct {
 	testFilePaths  []string
 	dataSourcePath string
+	testDirectory  string
 }
 
 func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
+	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
