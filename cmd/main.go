@@ -35,6 +35,8 @@ func main() {
 			"Timeout could be overridden per resource using \"uptest.upbound.io/timeout\" annotation.").Default("1200").Int()
 		defaultConditions = e2e.Flag("default-conditions", "Comma seperated list of default conditions to wait for a successful test.\n"+
 			"Conditions could be overridden per resource using \"uptest.upbound.io/conditions\" annotation.").Default("Ready").String()
+
+		testDir = e2e.Flag("test-directory", "Directory where kuttl test case will be generated and executed.").Envar("UPTEST_TEST_DIR").Default(filepath.Join(os.TempDir(), "uptest-e2e")).String()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -72,6 +74,7 @@ func main() {
 		TeardownScriptPath: teardownPath,
 		DefaultConditions:  strings.Split(*defaultConditions, ","),
 		DefaultTimeout:     *defaultTimeout,
+		Directory:          *testDir,
 	}
 
 	kingpin.FatalIfError(internal.RunTest(o), "cannot run e2e tests successfully")

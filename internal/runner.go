@@ -8,7 +8,7 @@ import (
 
 func RunTest(o *config.AutomatedTest) error {
 	// Read examples and inject data source values to manifests
-	manifests, err := NewPreparer(o.ManifestPaths, WithDataSource(o.DataSourcePath)).PrepareManifests()
+	manifests, err := NewPreparer(o.ManifestPaths, WithDataSource(o.DataSourcePath), WithTestDirectory(o.Directory)).PrepareManifests()
 	if err != nil {
 		return errors.Wrap(err, "cannot prepare manifests")
 	}
