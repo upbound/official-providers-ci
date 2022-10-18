@@ -10,6 +10,8 @@ const (
 )
 
 type AutomatedTest struct {
+	Directory string
+
 	ManifestPaths  []string
 	DataSourcePath string
 
