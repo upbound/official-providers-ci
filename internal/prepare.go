@@ -109,7 +109,7 @@ func (p *Preparer) injectVariables() (map[string]string, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "cannot read data source file")
 		}
-		if err := yaml.Unmarshal(dataSource, dataSourceMap); err != nil {
+		if err := yaml.Unmarshal(dataSource, &dataSourceMap); err != nil {
 			return nil, errors.Wrap(err, "cannot prepare data source map")
 		}
 	}
