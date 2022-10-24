@@ -3,8 +3,8 @@ kind: TestStep
 commands:
 {{- range $resource := .Resources }}
 {{- if $resource.Namespace }}
-- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false --namespace {{ $resource.Namespace }}
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false --namespace {{ $resource.Namespace }} --ignore-not-found
 {{- else }}
-- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false
+- command: ${KUBECTL} delete {{ $resource.KindGroup }}/{{ $resource.Name }} --wait=false --ignore-not-found
 {{- end }}
 {{- end }}
