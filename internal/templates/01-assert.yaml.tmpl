@@ -3,6 +3,9 @@ kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
 {{- range $resource := .Resources }}
+{{- if eq $resource.KindGroup "secret." -}}
+  {{continue}}
+{{- end -}}
 {{- if $resource.Namespace }}
 - command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
 {{- else }}

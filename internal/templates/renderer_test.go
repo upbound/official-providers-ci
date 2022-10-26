@@ -29,6 +29,16 @@ spec:
       count: 1
       size: small
 `
+
+	secretManifest = `apiVersion: v1
+kind: Secret
+metadata:
+  name: test-secret
+  namespace: upbound-system
+type: Opaque
+data:
+  key: dmFsdWU=
+`
 )
 
 func TestRender(t *testing.T) {
@@ -108,6 +118,12 @@ commands:
 						PreDeleteScriptPath:  "/tmp/claim/pre-delete.sh",
 						Conditions:           []string{"Ready", "Synced"},
 					},
+					{
+						YAML:      secretManifest,
+						Name:      "test-secret",
+						KindGroup: "secret.",
+						Namespace: "upbound-system",
+					},
 				},
 			},
 			want: want{
@@ -116,7 +132,7 @@ commands:
 kind: TestStep
 commands:
 - command: /tmp/setup.sh
-` + "---\n" + bucketManifest + "---\n" + claimManifest,
+` + "---\n" + bucketManifest + "---\n" + claimManifest + "---\n" + secretManifest,
 					"00-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 10
