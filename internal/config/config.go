@@ -7,6 +7,8 @@ const (
 	AnnotationKeyConditions     = "uptest.upbound.io/conditions"
 	AnnotationKeyPreAssertHook  = "uptest.upbound.io/pre-assert-hook"
 	AnnotationKeyPostAssertHook = "uptest.upbound.io/post-assert-hook"
+	AnnotationKeyPreDeleteHook  = "uptest.upbound.io/pre-delete-hook"
+	AnnotationKeyPostDeleteHook = "uptest.upbound.io/post-delete-hook"
 )
 
 type AutomatedTest struct {
@@ -44,4 +46,6 @@ type Resource struct {
 	Conditions           []string
 	PreAssertScriptPath  string
 	PostAssertScriptPath string
+	PreDeleteScriptPath  string
+	PostDeleteScriptPath string
 }

@@ -101,6 +101,20 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 			}
 		}
 
+		if v, ok := annotations[config.AnnotationKeyPreDeleteHook]; ok {
+			example.PreDeleteScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(m.FilePath), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for pre delete hook")
+			}
+		}
+
+		if v, ok := annotations[config.AnnotationKeyPostDeleteHook]; ok {
+			example.PostDeleteScriptPath, err = filepath.Abs(filepath.Join(filepath.Dir(m.FilePath), filepath.Clean(v)))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "cannot find absolute path for post delete hook")
+			}
+		}
+
 		examples = append(examples, example)
 	}
 
