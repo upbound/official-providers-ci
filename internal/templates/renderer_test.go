@@ -5,7 +5,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
-	
+
 	"github.com/upbound/uptest/internal/config"
 )
 
@@ -71,7 +71,7 @@ commands:
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false
+- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false --ignore-not-found
 `,
 					"01-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
@@ -92,11 +92,12 @@ commands:
 				},
 				resources: []config.Resource{
 					{
-						YAML:                bucketManifest,
-						Name:                "example-bucket",
-						KindGroup:           "s3.aws.upbound.io",
-						PreAssertScriptPath: "/tmp/bucket/pre-assert.sh",
-						Conditions:          []string{"Test"},
+						YAML:                 bucketManifest,
+						Name:                 "example-bucket",
+						KindGroup:            "s3.aws.upbound.io",
+						PreAssertScriptPath:  "/tmp/bucket/pre-assert.sh",
+						PostDeleteScriptPath: "/tmp/bucket/post-delete.sh",
+						Conditions:           []string{"Test"},
 					},
 					{
 						YAML:                 claimManifest,
@@ -104,6 +105,7 @@ commands:
 						KindGroup:            "cluster.gcp.platformref.upbound.io",
 						Namespace:            "upbound-system",
 						PostAssertScriptPath: "/tmp/claim/post-assert.sh",
+						PreDeleteScriptPath:  "/tmp/claim/pre-delete.sh",
 						Conditions:           []string{"Ready", "Synced"},
 					},
 				},
@@ -129,8 +131,10 @@ commands:
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false
-- command: ${KUBECTL} delete cluster.gcp.platformref.upbound.io/test-cluster-claim --wait=false --namespace upbound-system
+- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false --ignore-not-found
+- command: /tmp/bucket/post-delete.sh
+- command: /tmp/claim/pre-delete.sh
+- command: ${KUBECTL} delete cluster.gcp.platformref.upbound.io/test-cluster-claim --wait=false --namespace upbound-system --ignore-not-found
 `,
 					"01-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert

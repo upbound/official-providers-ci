@@ -42,7 +42,7 @@ uptest e2e examples/user.yaml,examples/bucket.yaml --setup-script="test/hooks/se
 
 ### Hooks
 
-There are 4 types of hooks that can be used to customize the test flow:
+There are 6 types of hooks that can be used to customize the test flow:
 
 1. `setup-script`: This hook will be executed before running the tests case. It is useful to set up the control plane
    before running the tests. For example, you can use it to create a provider config and your cloud credentials. This
@@ -54,6 +54,10 @@ There are 4 types of hooks that can be used to customize the test flow:
     manifest file.
 4. `post-assert-hook`: This hook will be executed after running the assertions. This can be configured via 
     `uptest.upbound.io/post-assert-hook` annotation on the manifest as a relative path to the manifest file.
+5. `pre-delete-hook`: This hook will be executed just before deleting the resource. This can be configured via 
+    `uptest.upbound.io/pre-delete-hook` annotation on the manifest as a relative path to the manifest file.
+6. `post-delete-hook`: This hook will be executed right after the resource is deleted. This can be configured via
+   `uptest.upbound.io/post-delete-hook` annotation on the manifest as a relative path to the manifest file.
 
 > All hooks need to be executables, please make sure to set the executable bit on your scripts, e.g. with `chmod +x`.
 
