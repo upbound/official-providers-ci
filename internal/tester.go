@@ -56,10 +56,6 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 
 	for _, m := range t.manifests {
 		obj := m.Object
-		if obj.GroupVersionKind().String() == "/v1, Kind=Secret" {
-			continue
-		}
-
 		kg := strings.ToLower(obj.GroupVersionKind().Kind + "." + obj.GroupVersionKind().Group)
 
 		example := config.Resource{
