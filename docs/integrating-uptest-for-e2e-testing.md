@@ -1,8 +1,8 @@
 # Integrating Uptest for End to End Testing
 
 In this tutorial, we will integrate [uptest](https://github.com/upbound/uptest) to a Github repository to automate end to end
-testing managed resources. While we will use a _provider_ repository as an example, the process will be identical for a
-configuration repository.
+testing managed resources. While we will use a `Provider` repository as an example, the process will be identical for a
+`Configuration` repository.
 
 Starting with a provider repository with no end to end testing capability, we will end up having:
 - A make target to locally test examples end to end
@@ -106,8 +106,8 @@ uptests reusable workflow:
 	  e2e:
 	    uses: upbound/uptest/.github/workflows/pr-comment-trigger.yml@main
 	    secrets:
-	      UPTEST_CLOUD_CREDENTIALS: \${{ secrets.UPTEST_AWS_CREDS }}
-	      UPTEST_DATASOURCE: \${{ secrets.UPTEST_EXAMPLE_VALUE_REPLACEMENTS }}
+	      UPTEST_CLOUD_CREDENTIALS: \${{ secrets.UPTEST_CLOUD_CREDENTIALS }}
+	      UPTEST_DATASOURCE: \${{ secrets.UPTEST_DATASOURCE }}
 	EOF
 	```
 	
@@ -135,9 +135,9 @@ We are now ready to test our changes end to end via GitHub Actions. We will try 
 3. Add the following comment on the PR:
 
 	```
-	/test-examples=examples/repository/repository.yaml
+	/test-examples="examples/repository/repository.yaml"
 	```
 
 4. Check the Actions and follow how end to end testing goes.
 
-[demo repository]: (https://github.com/upbound/demo-uptest-integration)
+[demo repository]: https://github.com/upbound/demo-uptest-integration
