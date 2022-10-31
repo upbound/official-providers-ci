@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,8 +47,7 @@ func main() {
 		examplePaths = append(examplePaths, filepath.Join(cd, filepath.Clean(e)))
 	}
 	if len(examplePaths) == 0 {
-		fmt.Println("No example files to test.")
-		return
+		kingpin.Fatalf("No manifest to test provided.")
 	}
 
 	setupPath := ""
