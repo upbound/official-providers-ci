@@ -8,6 +8,11 @@ on:
         default: '/test-examples'
         required: false
         type: string
+      go-version:
+        description: 'Go version to use if building needs to be done'
+        default: '1.19'
+        required: false
+        type: string
     secrets:
       UPTEST_CLOUD_CREDENTIALS:
         description: 'Uptest cloud credentials to be passed to the uptest target as environment variable'
@@ -23,6 +28,7 @@ jobs:
       - name: Debug
         run: |
           echo "Trigger keyword: ${{ inputs.trigger-keyword }}"
+          echo "Go version: ${{ inputs.go-version }}"
           echo "github.event.comment.author_association: ${{ github.event.comment.author_association }}"
           echo "github.event.comment.body: ${{ github.event.comment.body }}"
 
@@ -100,6 +106,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ inputs.go-version }}
+
       - name: Checkout PR
         id: checkout-pr
         env:
@@ -119,7 +130,7 @@ jobs:
           UPTEST_DATASOURCE_PATH: .work/uptest-datasource.yaml
         run: |
           mkdir -p .work && echo ${{ secrets.UPTEST_DATASOURCE }} > .work/uptest-datasource.yaml
-          make uptest
+          make e2e
 
       - name: Create Successful Status Check
         env:
