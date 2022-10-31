@@ -27,7 +27,7 @@ func main() {
 			"'provider-aws/examples/s3/bucket.yaml,provider-gcp/examples/storage/bucket.yaml': "+
 			"The comma separated resources are used as test inputs.\n"+
 			"If this option is not set, 'MANIFEST_LIST' env var is used as default.").Envar("MANIFEST_LIST").String()
-		dataSourcePath = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Default("").String()
+		dataSourcePath = e2e.Flag("data-source", "File path of data source that will be used for injection some values.").Envar("UPTEST_DATASOURCE_PATH").Default("").String()
 		setupScript    = e2e.Flag("setup-script", "Script that will be executed before running tests.").Default("").String()
 		teardownScript = e2e.Flag("teardown-script", "Script that will be executed after running tests.").Default("").String()
 
