@@ -10,10 +10,11 @@ Starting with a provider repository with no end to end testing capability, we wi
 
 ## Setting up the Make targets
 
-1. Go to the [demo repository] which contains a GitHub provider generated using upjet and hit the `Use this template` button
-to initialize your demo repository under your own GitHub organization.
-2. Clone your demo repository on your local and `cd` into the root directory.
-3. Initialize build submodule with
+1. Go to the [demo repository](https://github.com/upbound/demo-uptest-integration) which contains a GitHub provider
+    generated using upjet and hit the `Use this template` button to initialize your demo repository under your own
+	GitHub organization.
+1. Clone your demo repository on your local and `cd` into the root directory.
+2. Initialize build submodule with
 
 	```bash
 	make submodules
@@ -74,6 +75,13 @@ to initialize your demo repository under your own GitHub organization.
 	e2e: build controlplane.up local.xpkg.deploy.provider.$(PROJECT_NAME) uptest
 	```
 
+6. Commit the changes we did so far.
+
+	```bash
+	git add Makefile cluster/test/setup.sh
+	git commit -m "Add uptest and e2e targets"
+	```
+
 ## Testing Locally
 
 1. Generate a [Personal Access Token](https://github.com/settings/tokens/new) for your Github account with
@@ -111,7 +119,10 @@ uptests reusable workflow:
 	EOF
 	```
 	
-2. Commit and push to the `main` branch of the repository.
+   > See [Injecting Dynamic Values (and Datasource)](../README.md#injecting-dynamic-values-and-datasource) for more
+   > details on `UPTEST_DATASOURCE` secret.
+
+1. Commit and push to the `main` branch of the repository.
 
 	```
 	git add .github/workflows/e2e.yaml
@@ -120,9 +131,9 @@ uptests reusable workflow:
 	```
 
 3. Lastly, we need to add a Repository Secret with our GitHub token.
-	1. Go to your repository settings in GitHub UI.
+	1. Go to your repository Settings in GitHub UI.
 	2. On the left side, select `Secrets` -> `Actions` under `Security` section.
-	3. Hit `New Repository Secret`
+	3. Hit `New repository secret`
 	4. Enter `UPTEST_CLOUD_CREDENTIALS` as `Name` and your GitHub Token as `Secret` and hit `Add secret`
 
 ## Testing via CI
@@ -139,5 +150,3 @@ We are now ready to test our changes end to end via GitHub Actions. We will try 
 	```
 
 4. Check the Actions and follow how end to end testing goes.
-
-[demo repository]: https://github.com/upbound/demo-uptest-integration
