@@ -23,3 +23,10 @@ submodules:
 	@git submodule update --init --recursive
 
 .PHONY: submodules fallthrough
+
+-include build/makelib/k8s_tools.mk
+-include build/makelib/controlplane.mk
+
+uptest:
+	@echo "Running uptest"
+	@printenv

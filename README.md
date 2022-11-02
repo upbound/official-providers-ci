@@ -34,10 +34,69 @@ Args:
 Uptest expects a running control-plane (a.k.a. k8s + crossplane) where required providers are running and/or required
 configuration were applied.
 
-### Example: 
+Example run: 
 
 ```shell
 uptest e2e examples/user.yaml,examples/bucket.yaml --setup-script="test/hooks/setup.sh"
+```
+
+### Injecting Dynamic Values (and Datasource)
+
+Uptest supports injecting dynamic values into the examples by using a data source. The data source is a yaml file
+storing key-value pairs. The values can be used in the examples by using the following syntax:
+
+```
+${data.key}
+```
+
+Example data source file content:
+
+```yaml
+aws_account_id: 123456789012
+aws_region: us-east-1
+```
+
+Example manifest:
+
+```yaml
+apiVersion: athena.aws.upbound.io/v1beta1
+kind: DataCatalog
+metadata:
+  labels:
+    testing.upbound.io/example-name: example
+  name: example
+spec:
+  forProvider:
+    description: Example Athena data catalog
+    parameters:
+      function: arn:aws:lambda:${data.aws_region}:${data.aws_account_id}:function:upbound-example-function
+    region: us-west-1
+    tags:
+      Name: example-athena-data-catalog
+    type: LAMBDA
+```
+
+Uptest also supports generating random strings as follows:
+
+```
+${Rand.RFC1123Subdomain}
+```
+
+Example Manifest:
+
+```yaml
+apiVersion: s3.aws.upbound.io/v1beta1
+kind: Bucket
+metadata:
+  name: ${Rand.RFC1123Subdomain}
+  labels:
+    testing.upbound.io/example-name: s3
+spec:
+  forProvider:
+    region: us-west-1
+    objectLockEnabled: true
+    tags:
+      Name: SampleBucket
 ```
 
 ### Hooks
