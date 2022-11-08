@@ -129,7 +129,7 @@ jobs:
           UPTEST_TEST_DIR: ./_output/controlplane-dump
           UPTEST_DATASOURCE_PATH: .work/uptest-datasource.yaml
         run: |
-          mkdir -p .work && echo ${{ secrets.UPTEST_DATASOURCE }} > .work/uptest-datasource.yaml
+          mkdir -p .work && echo "${{ secrets.UPTEST_DATASOURCE }}" > .work/uptest-datasource.yaml
           make e2e
 
       - name: Create Successful Status Check
