@@ -19,7 +19,7 @@ on:
         required: true
       UPTEST_DATASOURCE:
         description: 'A set of key-value pairs to be injected into the uptest'
-        required: true
+        required: false
 
 jobs:
   debug:
