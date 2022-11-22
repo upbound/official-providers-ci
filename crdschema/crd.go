@@ -107,6 +107,8 @@ func getOpenAPIv3Document(crd *v1.CustomResourceDefinition) (*openapi3.T, error)
 	return t, nil
 }
 
+// GetBreakingChanges returns a diff representing
+// the detected breaking schema changes between the base and revision CRDs.
 func (d *Diff) GetBreakingChanges() (*diff.Diff, error) {
 	baseDoc, err := getOpenAPIv3Document(d.baseCRD)
 	if err != nil {
@@ -124,6 +126,7 @@ func (d *Diff) GetBreakingChanges() (*diff.Diff, error) {
 	return sd, errors.Wrap(err, errBreakingchangesCompute)
 }
 
+// GetDiffReport is a utility function to format the specified diff as a string
 func GetDiffReport(d *diff.Diff) string {
 	if d.Empty() {
 		return ""
