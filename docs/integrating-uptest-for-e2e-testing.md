@@ -1,8 +1,8 @@
 # Integrating Uptest for End to End Testing
 
 In this tutorial, we will integrate [uptest](https://github.com/upbound/uptest) to a Github repository to automate end to end
-testing managed resources. While we will use a `Provider` repository as an example, the process will be identical for a
-`Configuration` repository.
+testing managed resources. While we will use a `Provider` repository as an example, the process will be almost identical
+for a `Configuration` repository.
 
 Starting with a provider repository with no end to end testing capability, we will end up having:
 - A make target to locally test examples end to end
@@ -27,7 +27,7 @@ Starting with a provider repository with no end to end testing capability, we wi
 	touch cluster/test/setup.sh
 	chmod +x cluster/test/setup.sh
 
-	cat <<EOF > cluster/test/setup.sh
+	cat <<EOF0 > cluster/test/setup.sh
 	#!/usr/bin/env bash
 	set -aeuo pipefail
 
@@ -55,7 +55,8 @@ Starting with a provider repository with no end to end testing capability, we wi
 	      name: provider-secret
 	      namespace: upbound-system
 	      key: credentials
-	EOF
+	EOF	  
+	EOF0
 	```
 
 5. Now, please add the following lines to your Makefile which which will add `uptest` and `e2e` targets:
@@ -74,6 +75,10 @@ Starting with a provider repository with no end to end testing capability, we wi
 
 	e2e: build controlplane.up local.xpkg.deploy.provider.$(PROJECT_NAME) uptest
 	```
+
+	> Note: If you're following this tutorial for a `Configuration` repository, you will need to add
+	> `local.xpkg.deploy.configuration.$(PROJECT_NAME)` instead of `local.xpkg.deploy.provider.$(PROJECT_NAME)` to the
+	> `e2e` target.
 
 6. Commit the changes we did so far.
 
