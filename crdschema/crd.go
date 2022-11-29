@@ -44,18 +44,18 @@ type Diff struct {
 func NewDiff(basePath, revisionPath string) (*Diff, error) {
 	d := &Diff{}
 	var err error
-	d.baseCRD, err = getCRD(basePath)
+	d.baseCRD, err = loadCRD(basePath)
 	if err != nil {
 		return nil, errors.Wrap(err, errCRDLoad)
 	}
-	d.revisionCRD, err = getCRD(revisionPath)
+	d.revisionCRD, err = loadCRD(revisionPath)
 	if err != nil {
 		return nil, errors.Wrap(err, errCRDLoad)
 	}
 	return d, nil
 }
 
-func getCRD(m string) (*v1.CustomResourceDefinition, error) {
+func loadCRD(m string) (*v1.CustomResourceDefinition, error) {
 	crd := &v1.CustomResourceDefinition{}
 	buff, err := os.ReadFile(m)
 	if err != nil {
