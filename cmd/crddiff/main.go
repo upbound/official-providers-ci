@@ -21,7 +21,7 @@ import (
 
 	"gopkg.in/alecthomas/kingpin.v2"
 
-	"github.com/upbound/uptest/crdschema"
+	"github.com/upbound/uptest/internal/crdschema"
 )
 
 func main() {
