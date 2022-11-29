@@ -26,20 +26,39 @@ import (
 
 func main() {
 	var (
-		app             = kingpin.New("crddiff", "A tool for checking breaking API changes between two CRD OpenAPI v3 schemas").DefaultEnvars()
-		baseCRDPath     = app.Arg("base", "The manifest file path of the CRD to be used as the base").Required().ExistingFile()
-		revisionCRDPath = app.Arg("revision", "The manifest file path of the CRD to be used as a revision to the base").Required().ExistingFile()
+		app = kingpin.New("crddiff", "A tool for checking breaking API changes between two CRD OpenAPI v3 schemas. The schemas can come from either two revisions of a CRD, or from the versions declared in a single CRD.").DefaultEnvars()
+
+		cmdSelf = app.Command("self", "Use OpenAPI v3 schemas from a single CRD")
+		crdPath = cmdSelf.Arg("crd", "The manifest file path of the CRD whose versions are to be checked for breaking changes").Required().ExistingFile()
+
+		cmdRevision     = app.Command("revision", "Compare the first schema available in a base CRD against the first schema from a revision CRD")
+		baseCRDPath     = cmdRevision.Arg("base", "The manifest file path of the CRD to be used as the base").Required().ExistingFile()
+		revisionCRDPath = cmdRevision.Arg("revision", "The manifest file path of the CRD to be used as a revision to the base").Required().ExistingFile()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
-	crdDiff, err := crdschema.NewDiff(*baseCRDPath, *revisionCRDPath)
-	kingpin.FatalIfError(err, "Failed to load CRDs")
-	d, err := crdDiff.GetBreakingChanges()
-	kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
-	if d.Empty() {
-		return
+	var crdDiff crdschema.SchemaCheck
+	var err error
+	if baseCRDPath != nil && revisionCRDPath != nil {
+		crdDiff, err = crdschema.NewRevisionDiff(*baseCRDPath, *revisionCRDPath)
+	} else {
+		crdDiff, err = crdschema.NewSelfDiff(*crdPath)
 	}
+	kingpin.FatalIfError(err, "Failed to load CRDs")
+	versionMap, err := crdDiff.GetBreakingChanges()
+	kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+
 	l := log.New(os.Stderr, "", 0)
-	l.Println(crdschema.GetDiffReport(d))
-	syscall.Exit(1)
+	breakingDetected := false
+	for v, d := range versionMap {
+		if d.Empty() {
+			continue
+		}
+		breakingDetected = true
+		l.Printf("Version %q:\n", v)
+		l.Println(crdschema.GetDiffReport(d))
+	}
+	if breakingDetected {
+		syscall.Exit(1)
+	}
 }
