@@ -246,9 +246,10 @@ func Test_GetRevisionBreakingChanges(t *testing.T) {
 			},
 		},
 	}
+
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			diff, err := newDiffWithModifiers(tt.args.basePath, tt.args.basePath, tt.args.revisionModifiers...)
+			diff, err := newRevisionDiffWithModifiers(tt.args.basePath, tt.args.basePath, tt.args.revisionModifiers...)
 			if err != nil {
 				t.Errorf("\n%s\nnewDiffWithModifiers(...): failed to load base or revision CRD:\n%v", tt.reason, err)
 				return
@@ -276,9 +277,96 @@ func Test_GetRevisionBreakingChanges(t *testing.T) {
 	}
 }
 
+func Test_GetSelfBreakingChanges(t *testing.T) {
+	type want struct {
+		errExpected     bool
+		breakingChanges map[int]string
+	}
+	type args struct {
+		crdPath           string
+		revisionModifiers []crdModifier
+	}
+	tests := map[string]struct {
+		reason string
+		args   args
+		want   want
+	}{
+		"NoBreakingChanges": {
+			reason: "No Diff should be reported if the version schemas are identical",
+			args: args{
+				crdPath: "testdata/base.yaml",
+			},
+		},
+		"BreakingChangeInV1Beta2": {
+			reason: "Changing the type of an existing field is a breaking API change in v1beta2",
+			args: args{
+				crdPath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						p := getSpecForProviderProperty(r, 1, "certificateChain")
+						p.Type = "int"
+						addSpecForProviderProperty(r, 1, "certificateChain", p, nil)
+					},
+				},
+			},
+			want: want{
+				breakingChanges: map[int]string{1: `
+- Schema changed
+  - Properties changed
+    - Modified property: spec
+      - Properties changed
+        - Modified property: forProvider
+          - Properties changed
+            - Modified property: certificateChain
+              - Type changed from 'string' to 'int'`},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			diff, err := newSelfDiffWithModifiers(tt.args.crdPath, tt.args.revisionModifiers...)
+			if err != nil {
+				t.Errorf("\n%s\nnewDiffWithModifiers(...): failed to load the CRD:\n%v", tt.reason, err)
+				return
+			}
+			m, err := diff.GetBreakingChanges()
+			if (err != nil) != tt.want.errExpected {
+				t.Errorf("\n%s\nGetBreakingChanges(): error = %v, wantErr = %v", tt.reason, err, tt.want.errExpected)
+				return
+			}
+			if err != nil {
+				return
+			}
+			for i, d := range tt.want.breakingChanges {
+				version := diff.crd.Spec.Versions[i].Name
+				if (len(d) == 0) != m[version].Empty() {
+					t.Errorf("\n%s\nGetBreakingChanges(): (len(breakingChanges) == 0) = %v, isEmpty = %v, diff = \n%s", tt.reason, len(d) == 0, m[version].Empty(), GetDiffReport(m[version]))
+					return
+				}
+				got := GetDiffReport(m[version])
+				if diff := cmp.Diff(strings.TrimSpace(d), strings.TrimSpace(got)); diff != "" {
+					t.Errorf("\n%s\nGetDiffReport(...): -want, +got:\n%s", tt.reason, diff)
+				}
+			}
+		})
+	}
+}
+
 type crdModifier func(crd *v1.CustomResourceDefinition)
 
-func newDiffWithModifiers(basePath, revisionPath string, revisionModifiers ...crdModifier) (*RevisionDiff, error) {
+func newSelfDiffWithModifiers(crdPath string, crdModifiers ...crdModifier) (*SelfDiff, error) {
+	d, err := NewSelfDiff(crdPath)
+	if err != nil {
+		return nil, err
+	}
+	for _, m := range crdModifiers {
+		m(d.crd)
+	}
+	return d, nil
+}
+
+func newRevisionDiffWithModifiers(basePath, revisionPath string, revisionModifiers ...crdModifier) (*RevisionDiff, error) {
 	d, err := NewRevisionDiff(basePath, revisionPath)
 	if err != nil {
 		return nil, err

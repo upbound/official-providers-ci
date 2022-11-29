@@ -22,6 +22,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tufin/oasdiff/diff"
 	"github.com/tufin/oasdiff/report"
+	"golang.org/x/mod/semver"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiyaml "k8s.io/apimachinery/pkg/util/yaml"
 	k8syaml "sigs.k8s.io/yaml"
@@ -33,6 +34,8 @@ const (
 	errBreakingSelfVersionsCompute    = "failed to compute breaking changes in the versions of a CRD"
 )
 
+// SchemaCheck represents a schema checker that can return the set of breaking
+// API changes between schemas.
 type SchemaCheck interface {
 	GetBreakingChanges() (map[string]*diff.Diff, error)
 }
@@ -144,6 +147,7 @@ func (d *SelfDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 	if len(selfDocs) < 2 {
 		return diffMap, nil
 	}
+	sortVersions(selfDocs)
 	prev := 0
 	for prev < len(selfDocs)-1 {
 		revisionDoc := selfDocs[prev+1]
@@ -152,8 +156,28 @@ func (d *SelfDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 			return nil, errors.Wrap(err, errBreakingSelfVersionsCompute)
 		}
 		diffMap[revisionDoc.Info.Version] = sd
+		prev = prev + 1
 	}
 	return diffMap, nil
+}
+
+func sortVersions(versions []*openapi3.T) {
+	versionNames := make([]string, 0, len(versions))
+	for _, t := range versions {
+		versionNames = append(versionNames, t.Info.Version)
+	}
+	semver.Sort(versionNames)
+	for i, v := range versionNames {
+		for j := range versions {
+			if versions[j].Info.Version != v {
+				continue
+			}
+			tmp := versions[i]
+			versions[i] = versions[j]
+			versions[j] = tmp
+			break
+		}
+	}
 }
 
 // GetBreakingChanges returns a diff representing
