@@ -8,6 +8,7 @@ PLATFORMS ?= linux_amd64 linux_arm64 darwin_amd64 darwin_arm64
 -include build/makelib/output.mk
 
 # Setup Go
+GO_REQUIRED_VERSION = 1.19
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd
 GO_SUBDIRS += cmd
 GO111MODULE = on
