@@ -1,0 +1,35 @@
+name: Issue Triage
+
+on:
+  workflow_call:
+    secrets:
+      UPBOUND_BOT_GITHUB_TOKEN:
+        description: 'A PAT with permissions that allow adding issues to a project'
+        required: true      
+
+jobs:
+  community_issue_triage:
+    if: ${{ (github.event.issue.author_association != 'OWNER' &&
+      github.event.issue.author_association != 'MEMBER' &&
+      github.event.issue.author_association != 'COLLABORATOR' ) }}
+    runs-on: ubuntu-22.04
+    permissions:
+      issues: write
+    steps:
+      - name: Label as community issue
+        if: ${{ !contains(github.event.issue.labels.*.name, 'community') }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["community"]
+            })
+      - name: Add issue to Extensions Community Support project
+        uses: actions/add-to-project@RELEASE_VERSION
+        with:
+          project-url: https://github.com/orgs/upbound/projects/104/views/1
+          github-token: ${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}
+          labeled: community
