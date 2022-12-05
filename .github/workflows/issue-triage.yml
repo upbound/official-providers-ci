@@ -28,7 +28,7 @@ jobs:
               labels: ["community"]
             })
       - name: Add issue to Extensions Community Support project
-        uses: actions/add-to-project@RELEASE_VERSION
+        uses: actions/add-to-project@v0.4.0
         with:
           project-url: https://github.com/orgs/upbound/projects/104/views/1
           github-token: ${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}
