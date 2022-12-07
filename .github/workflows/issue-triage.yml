@@ -17,6 +17,7 @@ jobs:
   community_issue_triage:
     if: ${{ (github.event.issue.author_association != 'OWNER' &&
       github.event.issue.author_association != 'MEMBER' &&
+      github.event.issue.author_association != 'CONTRIBUTOR' &&
       github.event.issue.author_association != 'COLLABORATOR' ) }}
     runs-on: ubuntu-22.04
     permissions:
