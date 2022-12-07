@@ -8,6 +8,12 @@ on:
         required: true      
 
 jobs:
+  debug:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Debug
+        run: |
+          echo "github.event.issue.author_association: ${{ github.event.issue.author_association }}"
   community_issue_triage:
     if: ${{ (github.event.issue.author_association != 'OWNER' &&
       github.event.issue.author_association != 'MEMBER' &&
@@ -32,4 +38,3 @@ jobs:
         with:
           project-url: https://github.com/orgs/upbound/projects/104/views/1
           github-token: ${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}
-          labeled: community
