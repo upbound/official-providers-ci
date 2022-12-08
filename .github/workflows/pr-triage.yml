@@ -15,7 +15,6 @@ jobs:
         run: |
           echo "github.event.pull_request.author_association: ${{ github.event.pull_request.author_association }}"
           echo "github.event.pull_request.number: ${{ github.event.pull_request.number }}"
-          echo "github.event.number: ${{ github.event.number }}"
   community-pr-triage:
     if: ${{ (github.event.pull_request.author_association != 'OWNER' &&
       github.event.pull_request.author_association != 'MEMBER' &&
@@ -31,7 +30,7 @@ jobs:
         with:
           script: |
             github.rest.issues.addLabels({
-              issue_number: github.event.number,
+              issue_number: context.pull_request.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ["community"]
