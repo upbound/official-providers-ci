@@ -21,8 +21,7 @@ jobs:
       github.event.pull_request.author_association != 'CONTRIBUTOR' &&
       github.event.pull_request.author_association != 'COLLABORATOR' ) }}
     runs-on: ubuntu-22.04
-    permissions:
-      issues: write
+    permissions: write-all
     steps:
       - name: Label as community PR
         if: ${{ !contains(github.event.pull_request.labels.*.name, 'community') }}
