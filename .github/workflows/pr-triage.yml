@@ -1,0 +1,41 @@
+name: Pull Request Triage
+
+on:
+  workflow_call:
+    secrets:
+      UPBOUND_BOT_GITHUB_TOKEN:
+        description: 'A PAT with permissions that allow labeling and adding PRs to a project'
+        required: true      
+
+jobs:
+  debug:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Debug
+        run: |
+          echo "github.event.pull_request.author_association: ${{ github.event.pull_request.author_association }}"
+  community-pr-triage:
+    if: ${{ (github.event.pull_request.author_association != 'OWNER' &&
+      github.event.pull_request.author_association != 'MEMBER' &&
+      github.event.pull_request.author_association != 'CONTRIBUTOR' &&
+      github.event.pull_request.author_association != 'COLLABORATOR' ) }}
+    runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Label as community PR
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'community') }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: github.event.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["community"]
+            })
+      - name: Add PR to Extensions Community Support project
+        uses: actions/add-to-project@v0.4.0
+        with:
+          project-url: https://github.com/orgs/upbound/projects/104/views/1
+          github-token: ${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}
