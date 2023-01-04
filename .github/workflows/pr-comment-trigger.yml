@@ -129,8 +129,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ steps.go.outputs.cache }}
-          key: ${{ runner.os }}-build-lint-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-build-lint-
+          key: ${{ runner.os }}-build-uptest-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-build-uptest-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v2
@@ -138,6 +138,9 @@ jobs:
           path: .work/pkg
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Vendor Dependencies
+        run: make vendor vendor.check
 
       - name: Run Uptest
         id: run-uptest
