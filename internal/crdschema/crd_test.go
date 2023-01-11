@@ -245,6 +245,96 @@ func Test_GetRevisionBreakingChanges(t *testing.T) {
               - Type changed from 'string' to 'int'`},
 			},
 		},
+		"RemoveRequiredFieldInRevision": {
+			reason: "Removing a required field in the revision is a breaking API change",
+			args: args{
+				basePath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						removeSpecForProviderProperty(r, 0, "region")
+					},
+				},
+			},
+			want: want{
+				breakingChanges: map[int]string{0: `
+- Schema changed
+  - Properties changed
+    - Modified property: spec
+      - Properties changed
+        - Modified property: forProvider
+          - Properties changed
+            - Deleted property: region`},
+			},
+		},
+		"RemoveOptionalFieldInRevision": {
+			reason: "Removing an optional field in the revision is a breaking API change",
+			args: args{
+				basePath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						removeSpecForProviderProperty(r, 0, "tags")
+					},
+				},
+			},
+			want: want{
+				breakingChanges: map[int]string{0: `
+- Schema changed
+  - Properties changed
+    - Modified property: spec
+      - Properties changed
+        - Modified property: forProvider
+          - Properties changed
+            - Deleted property: tags`},
+			},
+		},
+		"RenameRequiredFieldInRevision": {
+			reason: "Renaming a required field in the revision is a breaking API change",
+			args: args{
+				basePath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						renameSpecForProviderProperty(r, 0, "region", "regionRenamed")
+					},
+				},
+			},
+			want: want{
+				breakingChanges: map[int]string{0: `
+- Schema changed
+  - Properties changed
+    - Modified property: spec
+      - Properties changed
+        - Modified property: forProvider
+          - Required changed
+            - New required property: regionRenamed
+            - Deleted required property: region
+          - Properties changed
+            - New property: regionRenamed
+            - Deleted property: region`},
+			},
+		},
+		"RenameOptionalFieldInRevision": {
+			reason: "Renaming an optional field in the revision is a breaking API change",
+			args: args{
+				basePath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						renameSpecForProviderProperty(r, 0, "tags", "tagsRenamed")
+					},
+				},
+			},
+			want: want{
+				// this is basically removing an optional field (breaking)
+				// and adding a new optional field (non-breaking)
+				breakingChanges: map[int]string{0: `
+- Schema changed
+  - Properties changed
+    - Modified property: spec
+      - Properties changed
+        - Modified property: forProvider
+          - Properties changed
+            - Deleted property: tags`},
+			},
+		},
 	}
 
 	for name, tt := range tests {
@@ -387,6 +477,27 @@ func addSpecForProviderProperty(crd *v1.CustomResourceDefinition, versionIndex i
 	if isRequired != nil && *isRequired {
 		required := append(forProvider.Required, fieldName)
 		forProvider.Required = required
+	}
+	crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"] = forProvider
+}
+
+func removeSpecForProviderProperty(crd *v1.CustomResourceDefinition, versionIndex int, fieldName string) {
+	forProvider := crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"]
+	delete(forProvider.Properties, fieldName)
+	crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"] = forProvider
+}
+
+func renameSpecForProviderProperty(crd *v1.CustomResourceDefinition, versionIndex int, fieldOldName, fieldNewName string) {
+	forProvider := crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"]
+	p := forProvider.Properties[fieldOldName]
+	removeSpecForProviderProperty(crd, versionIndex, fieldOldName)
+	forProvider.Properties[fieldNewName] = p
+	// check if the field being removed is a required one
+	for i, r := range forProvider.Required {
+		if r == fieldOldName {
+			forProvider.Required[i] = fieldNewName
+			break
+		}
 	}
 	crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"] = forProvider
 }
