@@ -29,6 +29,8 @@ import (
 )
 
 const (
+	contentTypeJSON = "application/json"
+
 	errCRDLoad                        = "failed to load the CustomResourceDefinition"
 	errBreakingRevisionChangesCompute = "failed to compute breaking changes in base and revision CRD schemas"
 	errBreakingSelfVersionsCompute    = "failed to compute breaking changes in the versions of a CRD"
@@ -117,7 +119,7 @@ func getOpenAPIv3Document(crd *v1.CustomResourceDefinition) ([]*openapi3.T, erro
 			},
 		}
 		s := &openapi3.Schema{}
-		c["application/json"] = &openapi3.MediaType{
+		c[contentTypeJSON] = &openapi3.MediaType{
 			Schema: &openapi3.SchemaRef{
 				Value: s,
 			},
@@ -205,13 +207,88 @@ func (d *RevisionDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 		}
 		diffMap[versionName] = sd
 	}
-	return diffMap, nil
+	return filterNonBreaking(diffMap), nil
+}
+
+var crdPutEndpoint = diff.Endpoint{
+	Method: "PUT",
+	Path:   "/crd",
+}
+
+func filterNonBreaking(diffMap map[string]*diff.Diff) map[string]*diff.Diff {
+	for v, d := range diffMap {
+		if d.Empty() {
+			continue
+		}
+		sd := d.EndpointsDiff.Modified[crdPutEndpoint].RequestBodyDiff.ContentDiff.MediaTypeModified[contentTypeJSON].SchemaDiff
+		ignoreOptionalNewProperties(sd)
+		if sd != nil && empty(sd.PropertiesDiff) {
+			sd.PropertiesDiff = nil
+		}
+		if sd == nil || sd.Empty() {
+			delete(diffMap, v)
+		}
+	}
+	return diffMap
+}
+
+func ignoreOptionalNewProperties(sd *diff.SchemaDiff) {
+	if sd == nil || sd.Empty() {
+		return
+	}
+	if sd.PropertiesDiff != nil {
+		// optional new fields are non-breaking
+		filteredAddedProps := make(diff.StringList, 0, len(sd.PropertiesDiff.Added))
+		if sd.RequiredDiff != nil {
+			for _, f := range sd.PropertiesDiff.Added {
+				for _, r := range sd.RequiredDiff.Added {
+					if f == r {
+						filteredAddedProps = append(filteredAddedProps, f)
+						break
+					}
+				}
+			}
+		}
+		sd.PropertiesDiff.Added = filteredAddedProps
+		for n, csd := range sd.PropertiesDiff.Modified {
+			ignoreOptionalNewProperties(csd)
+			if csd != nil && empty(csd.PropertiesDiff) {
+				csd.PropertiesDiff = nil
+			}
+			if csd == nil || csd.Empty() {
+				delete(sd.PropertiesDiff.Modified, n)
+			}
+		}
+		if empty(sd.PropertiesDiff) {
+			sd.PropertiesDiff = nil
+		}
+	}
+	ignoreOptionalNewProperties(sd.ItemsDiff)
+	if sd.ItemsDiff != nil && sd.ItemsDiff.Empty() {
+		sd.ItemsDiff = nil
+	}
+}
+
+func empty(sd *diff.SchemasDiff) bool {
+	if sd == nil || sd.Empty() {
+		return true
+	}
+	if len(sd.Added) != 0 || len(sd.Deleted) != 0 {
+		return false
+	}
+	for _, csd := range sd.Modified {
+		if csd != nil && !csd.Empty() {
+			return false
+		}
+	}
+	return true
 }
 
 func schemaDiff(baseDoc, revisionDoc *openapi3.T) (*diff.Diff, error) {
-	config := diff.NewConfig()
-	// currently we only need to detect breaking API changes
-	config.BreakingOnly = true
+	config := &diff.Config{
+		ExcludeExamples:    true,
+		ExcludeDescription: true,
+	}
 	sd, err := diff.Get(config, baseDoc, revisionDoc)
 	return sd, errors.Wrap(err, "failed to compute breaking changes between OpenAPI v3 schemas")
 }
