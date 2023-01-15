@@ -16,6 +16,7 @@ package crdschema
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -86,7 +87,7 @@ func NewSelfDiff(crdPath string) (*SelfDiff, error) {
 
 func loadCRD(m string) (*v1.CustomResourceDefinition, error) {
 	crd := &v1.CustomResourceDefinition{}
-	buff, err := os.ReadFile(m)
+	buff, err := os.ReadFile(filepath.Clean(m))
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to load the CRD manifest from file: %s", m)
 	}
@@ -158,7 +159,7 @@ func (d *SelfDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 			return nil, errors.Wrap(err, errBreakingSelfVersionsCompute)
 		}
 		diffMap[revisionDoc.Info.Version] = sd
-		prev = prev + 1
+		prev++
 	}
 	return diffMap, nil
 }
@@ -174,9 +175,7 @@ func sortVersions(versions []*openapi3.T) {
 			if versions[j].Info.Version != v {
 				continue
 			}
-			tmp := versions[i]
-			versions[i] = versions[j]
-			versions[j] = tmp
+			versions[i], versions[j] = versions[j], versions[i]
 			break
 		}
 	}
@@ -232,7 +231,7 @@ func filterNonBreaking(diffMap map[string]*diff.Diff) map[string]*diff.Diff {
 	return diffMap
 }
 
-func ignoreOptionalNewProperties(sd *diff.SchemaDiff) {
+func ignoreOptionalNewProperties(sd *diff.SchemaDiff) { // nolint:gocyclo
 	if sd == nil || sd.Empty() {
 		return
 	}

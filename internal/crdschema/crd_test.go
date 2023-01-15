@@ -475,8 +475,7 @@ func addSpecForProviderProperty(crd *v1.CustomResourceDefinition, versionIndex i
 	forProvider := crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"]
 	forProvider.Properties[fieldName] = p
 	if isRequired != nil && *isRequired {
-		required := append(forProvider.Required, fieldName)
-		forProvider.Required = required
+		forProvider.Required = append(forProvider.Required, fieldName)
 	}
 	crd.Spec.Versions[versionIndex].Schema.OpenAPIV3Schema.Properties["spec"].Properties["forProvider"] = forProvider
 }
