@@ -14,7 +14,7 @@
 
 package templates
 
-import _ "embed" // nolint:golint
+import _ "embed"
 
 // inputFileTemplate is the template for the input file.
 //

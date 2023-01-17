@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// main package for the uptest tooling.
 package main
 
 import (

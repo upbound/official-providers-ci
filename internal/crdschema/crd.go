@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package crdschema contains the implementation for crddiff, a utility
+// for comparing two CRD schemas for detecting and reporting changes
+// between those schemas.
 package crdschema
 
 import (
@@ -231,41 +234,50 @@ func filterNonBreaking(diffMap map[string]*diff.Diff) map[string]*diff.Diff {
 	return diffMap
 }
 
-func ignoreOptionalNewProperties(sd *diff.SchemaDiff) { // nolint:gocyclo
+func ignoreOptionalNewProperties(sd *diff.SchemaDiff) {
 	if sd == nil || sd.Empty() {
 		return
 	}
-	if sd.PropertiesDiff != nil {
-		// optional new fields are non-breaking
-		filteredAddedProps := make(diff.StringList, 0, len(sd.PropertiesDiff.Added))
-		if sd.RequiredDiff != nil {
-			for _, f := range sd.PropertiesDiff.Added {
-				for _, r := range sd.RequiredDiff.Added {
-					if f == r {
-						filteredAddedProps = append(filteredAddedProps, f)
-						break
-					}
-				}
-			}
-		}
-		sd.PropertiesDiff.Added = filteredAddedProps
-		for n, csd := range sd.PropertiesDiff.Modified {
-			ignoreOptionalNewProperties(csd)
-			if csd != nil && empty(csd.PropertiesDiff) {
-				csd.PropertiesDiff = nil
-			}
-			if csd == nil || csd.Empty() {
-				delete(sd.PropertiesDiff.Modified, n)
-			}
-		}
-		if empty(sd.PropertiesDiff) {
-			sd.PropertiesDiff = nil
-		}
-	}
+	ignorePropertiesDiff(sd)
 	ignoreOptionalNewProperties(sd.ItemsDiff)
 	if sd.ItemsDiff != nil && sd.ItemsDiff.Empty() {
 		sd.ItemsDiff = nil
 	}
+}
+
+func ignorePropertiesDiff(sd *diff.SchemaDiff) {
+	if sd.PropertiesDiff == nil {
+		return
+	}
+	keepOptionalNewFieldsDiff(sd)
+	for n, csd := range sd.PropertiesDiff.Modified {
+		ignoreOptionalNewProperties(csd)
+		if csd != nil && empty(csd.PropertiesDiff) {
+			csd.PropertiesDiff = nil
+		}
+		if csd == nil || csd.Empty() {
+			delete(sd.PropertiesDiff.Modified, n)
+		}
+	}
+	if empty(sd.PropertiesDiff) {
+		sd.PropertiesDiff = nil
+	}
+}
+
+func keepOptionalNewFieldsDiff(sd *diff.SchemaDiff) {
+	// optional new fields are non-breaking
+	filteredAddedProps := make(diff.StringList, 0, len(sd.PropertiesDiff.Added))
+	if sd.RequiredDiff != nil {
+		for _, f := range sd.PropertiesDiff.Added {
+			for _, r := range sd.RequiredDiff.Added {
+				if f == r {
+					filteredAddedProps = append(filteredAddedProps, f)
+					break
+				}
+			}
+		}
+	}
+	sd.PropertiesDiff.Added = filteredAddedProps
 }
 
 func empty(sd *diff.SchemasDiff) bool {

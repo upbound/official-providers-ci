@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package templates contains utilities for rendering kuttl test cases using
+// the templates contained in the package.
 package templates
 
 import (
@@ -30,6 +32,8 @@ var fileTemplates = map[string]string{
 	"01-assert.yaml": assertDeletedFileTemplate,
 }
 
+// Render renders the specified list of resources as a test case
+// with the specified configuration.
 func Render(tc *config.TestCase, resources []config.Resource) (map[string]string, error) {
 	data := struct {
 		Resources []config.Resource

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package internal implements the uptest runtime for running
+// automated tests using resource example manifests
+// using kuttl.
 package internal
 
 import (
@@ -43,22 +46,22 @@ var (
 	caseDirectory = "case"
 )
 
-type PreparerOption func(*Preparer)
+type preparerOption func(*preparer)
 
-func WithDataSource(path string) PreparerOption {
-	return func(p *Preparer) {
+func withDataSource(path string) preparerOption {
+	return func(p *preparer) {
 		p.dataSourcePath = path
 	}
 }
 
-func WithTestDirectory(path string) PreparerOption {
-	return func(p *Preparer) {
+func withTestDirectory(path string) preparerOption {
+	return func(p *preparer) {
 		p.testDirectory = path
 	}
 }
 
-func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
-	p := &Preparer{
+func newPreparer(testFilePaths []string, opts ...preparerOption) *preparer {
+	p := &preparer{
 		testFilePaths: testFilePaths,
 		testDirectory: os.TempDir(),
 	}
@@ -68,13 +71,13 @@ func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
 	return p
 }
 
-type Preparer struct {
+type preparer struct {
 	testFilePaths  []string
 	dataSourcePath string
 	testDirectory  string
 }
 
-func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
+func (p *preparer) prepareManifests() ([]config.Manifest, error) {
 	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
@@ -116,7 +119,7 @@ func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
 	return manifests, nil
 }
 
-func (p *Preparer) injectVariables() (map[string]string, error) {
+func (p *preparer) injectVariables() (map[string]string, error) {
 	dataSourceMap := make(map[string]string)
 	if p.dataSourcePath != "" {
 		dataSource, err := os.ReadFile(p.dataSourcePath)
@@ -139,7 +142,7 @@ func (p *Preparer) injectVariables() (map[string]string, error) {
 	return inputs, nil
 }
 
-func (p *Preparer) injectValues(manifestData string, dataSourceMap map[string]string) string {
+func (p *preparer) injectValues(manifestData string, dataSourceMap map[string]string) string {
 	// Inject data source values such as tenantID, objectID, accountID
 	dataSourceKeys := dataSourceRegex.FindAllStringSubmatch(manifestData, -1)
 	for _, dataSourceKey := range dataSourceKeys {
@@ -165,7 +168,7 @@ func generateRFC1123SubdomainCompatibleString() string {
 	rand.Seed(time.Now().UnixNano())
 	s := make([]rune, 8)
 	for i := range s {
-		s[i] = charset[rand.Intn(len(charset))] // #nosec G404: no need for crypto/rand here
+		s[i] = charset[rand.Intn(len(charset))] //nolint:gosec // no need for crypto/rand here
 	}
 	return fmt.Sprintf("op-%s", string(s))
 }

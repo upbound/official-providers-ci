@@ -30,19 +30,19 @@ import (
 	"github.com/upbound/uptest/internal/templates"
 )
 
-func NewTester(ms []config.Manifest, opts *config.AutomatedTest) *Tester {
-	return &Tester{
+func newTester(ms []config.Manifest, opts *config.AutomatedTest) *tester {
+	return &tester{
 		options:   opts,
 		manifests: ms,
 	}
 }
 
-type Tester struct {
+type tester struct {
 	options   *config.AutomatedTest
 	manifests []config.Manifest
 }
 
-func (t *Tester) ExecuteTests() error {
+func (t *tester) executeTests() error {
 	if err := t.writeKuttlFiles(); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
@@ -60,7 +60,7 @@ func (t *Tester) ExecuteTests() error {
 	return errors.Wrap(cmd.Wait(), "kuttl failed")
 }
 
-func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) { // nolint:gocyclo
+func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { //nolint:gocyclo // TODO: can we break this?
 	tc := &config.TestCase{
 		Timeout:            t.options.DefaultTimeout,
 		SetupScriptPath:    t.options.SetupScriptPath,
@@ -131,7 +131,7 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 	return tc, examples, nil
 }
 
-func (t *Tester) writeKuttlFiles() error {
+func (t *tester) writeKuttlFiles() error {
 	tc, examples, err := t.prepareConfig()
 	if err != nil {
 		return errors.Wrap(err, "cannot build examples config")

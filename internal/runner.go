@@ -20,15 +20,16 @@ import (
 	"github.com/upbound/uptest/internal/config"
 )
 
+// RunTest runs the specified automated test
 func RunTest(o *config.AutomatedTest) error {
 	// Read examples and inject data source values to manifests
-	manifests, err := NewPreparer(o.ManifestPaths, WithDataSource(o.DataSourcePath), WithTestDirectory(o.Directory)).PrepareManifests()
+	manifests, err := newPreparer(o.ManifestPaths, withDataSource(o.DataSourcePath), withTestDirectory(o.Directory)).prepareManifests()
 	if err != nil {
 		return errors.Wrap(err, "cannot prepare manifests")
 	}
 
 	// Prepare assert environment and run tests
-	if err := NewTester(manifests, o).ExecuteTests(); err != nil {
+	if err := newTester(manifests, o).executeTests(); err != nil {
 		return errors.Wrap(err, "cannot execute tests")
 	}
 
