@@ -1,3 +1,17 @@
+// Copyright 2023 Upbound Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package internal
 
 import (
@@ -16,24 +30,24 @@ import (
 	"github.com/upbound/uptest/internal/templates"
 )
 
-func NewTester(ms []config.Manifest, opts *config.AutomatedTest) *Tester {
-	return &Tester{
+func newTester(ms []config.Manifest, opts *config.AutomatedTest) *tester {
+	return &tester{
 		options:   opts,
 		manifests: ms,
 	}
 }
 
-type Tester struct {
+type tester struct {
 	options   *config.AutomatedTest
 	manifests []config.Manifest
 }
 
-func (t *Tester) ExecuteTests() error {
+func (t *tester) executeTests() error {
 	if err := t.writeKuttlFiles(); err != nil {
 		return errors.Wrap(err, "cannot write kuttl test files")
 	}
 	fmt.Println("Running kuttl tests at " + t.options.Directory)
-	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete %s --timeout %d 2>&1`, t.options.Directory, t.options.DefaultTimeout))
+	cmd := exec.Command("bash", "-c", fmt.Sprintf(`"${KUTTL}" test --start-kind=false --skip-cluster-delete %s --timeout %d 2>&1`, t.options.Directory, t.options.DefaultTimeout)) // #nosec G204
 	stdout, _ := cmd.StdoutPipe()
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "cannot start kuttl")
@@ -46,7 +60,7 @@ func (t *Tester) ExecuteTests() error {
 	return errors.Wrap(cmd.Wait(), "kuttl failed")
 }
 
-func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
+func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { //nolint:gocyclo // TODO: can we break this?
 	tc := &config.TestCase{
 		Timeout:            t.options.DefaultTimeout,
 		SetupScriptPath:    t.options.SetupScriptPath,
@@ -117,7 +131,7 @@ func (t *Tester) prepareConfig() (*config.TestCase, []config.Resource, error) {
 	return tc, examples, nil
 }
 
-func (t *Tester) writeKuttlFiles() error {
+func (t *tester) writeKuttlFiles() error {
 	tc, examples, err := t.prepareConfig()
 	if err != nil {
 		return errors.Wrap(err, "cannot build examples config")

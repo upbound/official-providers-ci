@@ -1,3 +1,20 @@
+// Copyright 2023 Upbound Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package internal implements the uptest runtime for running
+// automated tests using resource example manifests
+// using kuttl.
 package internal
 
 import (
@@ -29,22 +46,22 @@ var (
 	caseDirectory = "case"
 )
 
-type PreparerOption func(*Preparer)
+type preparerOption func(*preparer)
 
-func WithDataSource(path string) PreparerOption {
-	return func(p *Preparer) {
+func withDataSource(path string) preparerOption {
+	return func(p *preparer) {
 		p.dataSourcePath = path
 	}
 }
 
-func WithTestDirectory(path string) PreparerOption {
-	return func(p *Preparer) {
+func withTestDirectory(path string) preparerOption {
+	return func(p *preparer) {
 		p.testDirectory = path
 	}
 }
 
-func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
-	p := &Preparer{
+func newPreparer(testFilePaths []string, opts ...preparerOption) *preparer {
+	p := &preparer{
 		testFilePaths: testFilePaths,
 		testDirectory: os.TempDir(),
 	}
@@ -54,13 +71,13 @@ func NewPreparer(testFilePaths []string, opts ...PreparerOption) *Preparer {
 	return p
 }
 
-type Preparer struct {
+type preparer struct {
 	testFilePaths  []string
 	dataSourcePath string
 	testDirectory  string
 }
 
-func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
+func (p *preparer) prepareManifests() ([]config.Manifest, error) {
 	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
@@ -77,7 +94,7 @@ func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
 		for {
 			u := &unstructured.Unstructured{}
 			if err := decoder.Decode(&u); err != nil {
-				if err == io.EOF {
+				if errors.Is(err, io.EOF) {
 					break
 				}
 				return nil, errors.Wrap(err, "cannot decode manifest")
@@ -102,7 +119,7 @@ func (p *Preparer) PrepareManifests() ([]config.Manifest, error) {
 	return manifests, nil
 }
 
-func (p *Preparer) injectVariables() (map[string]string, error) {
+func (p *preparer) injectVariables() (map[string]string, error) {
 	dataSourceMap := make(map[string]string)
 	if p.dataSourcePath != "" {
 		dataSource, err := os.ReadFile(p.dataSourcePath)
@@ -116,25 +133,21 @@ func (p *Preparer) injectVariables() (map[string]string, error) {
 
 	inputs := make(map[string]string, len(p.testFilePaths))
 	for _, f := range p.testFilePaths {
-		manifestData, err := os.ReadFile(f)
+		manifestData, err := os.ReadFile(filepath.Clean(f))
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot read %s", f)
 		}
-		inputData, err := p.injectValues(string(manifestData), dataSourceMap)
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot inject data source values")
-		}
-		inputs[f] = inputData
+		inputs[f] = p.injectValues(string(manifestData), dataSourceMap)
 	}
 	return inputs, nil
 }
 
-func (p *Preparer) injectValues(manifestData string, dataSourceMap map[string]string) (string, error) {
+func (p *preparer) injectValues(manifestData string, dataSourceMap map[string]string) string {
 	// Inject data source values such as tenantID, objectID, accountID
 	dataSourceKeys := dataSourceRegex.FindAllStringSubmatch(manifestData, -1)
 	for _, dataSourceKey := range dataSourceKeys {
 		if v, ok := dataSourceMap[dataSourceKey[1]]; ok {
-			manifestData = strings.Replace(manifestData, dataSourceKey[0], v, -1)
+			manifestData = strings.ReplaceAll(manifestData, dataSourceKey[0], v)
 		}
 	}
 	// Inject random strings
@@ -148,14 +161,14 @@ func (p *Preparer) injectValues(manifestData string, dataSourceMap map[string]st
 			continue
 		}
 	}
-	return manifestData, nil
+	return manifestData
 }
 
 func generateRFC1123SubdomainCompatibleString() string {
 	rand.Seed(time.Now().UnixNano())
 	s := make([]rune, 8)
 	for i := range s {
-		s[i] = charset[rand.Intn(len(charset))]
+		s[i] = charset[rand.Intn(len(charset))] //nolint:gosec // no need for crypto/rand here
 	}
 	return fmt.Sprintf("op-%s", string(s))
 }

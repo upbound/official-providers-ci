@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// main package for the uptest tooling.
 package main
 
 import (
@@ -61,7 +62,7 @@ var (
 
 	defaultTimeout = e2e.Flag("default-timeout", "Default timeout in seconds for the test.\n"+
 		"Timeout could be overridden per resource using \"uptest.upbound.io/timeout\" annotation.").Default("1200").Int()
-	defaultConditions = e2e.Flag("default-conditions", "Comma seperated list of default conditions to wait for a successful test.\n"+
+	defaultConditions = e2e.Flag("default-conditions", "Comma separated list of default conditions to wait for a successful test.\n"+
 		"Conditions could be overridden per resource using \"uptest.upbound.io/conditions\" annotation.").Default("Ready").String()
 
 	testDir = e2e.Flag("test-directory", "Directory where kuttl test case will be generated and executed.").Envar("UPTEST_TEST_DIR").Default(filepath.Join(os.TempDir(), "uptest-e2e")).String()
@@ -73,8 +74,9 @@ func e2eTests() {
 		kingpin.FatalIfError(err, "cannot get current directory")
 	}
 
-	var examplePaths []string
-	for _, e := range strings.Split(*manifestList, ",") {
+	list := strings.Split(*manifestList, ",")
+	examplePaths := make([]string, 0, len(list))
+	for _, e := range list {
 		if e == "" {
 			continue
 		}
