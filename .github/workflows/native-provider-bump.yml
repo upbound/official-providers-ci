@@ -1,0 +1,80 @@
+name: Native Provider Version Bump
+
+on:
+  workflow_call:
+    inputs:
+      provider-source:
+        description: 'Provider namespace/name to check, e.g., hashicorp/aws'
+        required: true
+        type: string
+      go-version:
+        description: 'Go version to use if building needs to be done'
+        default: '1.19'
+        required: false
+        type: string
+    secrets:
+      TOKEN:
+        description: 'Github token to use'
+        required: true
+
+jobs:
+  bump-version-makefile:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ inputs.go-version }}
+
+      - name: Find the Go Build Cache
+        id: go
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+
+      - name: Cache the Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go.outputs.cache }}
+          key: ${{ runner.os }}-build-lint-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-build-lint-
+
+      - name: Cache Go Dependencies
+        uses: actions/cache@v3
+        with:
+          path: .work/pkg
+          key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-pkg-
+
+      - name: Vendor Dependencies
+        run: make vendor vendor.check
+
+      - name: Bump native provider version in Makefile
+        id: bump-mk
+        run: |
+          sed -i -E "s/^(export[[:space:]]+TERRAFORM_PROVIDER_VERSION[[:space:]]*:=[[:space:]]*).+/\1$(curl -sL 'https://registry.terraform.io/v1/providers/${{ inputs.provider-source }}' | jq -r .version)/" Makefile
+          echo "bumped=$(git diff --name-only Makefile)" >> $GITHUB_OUTPUT
+          echo "version=$(curl -sL 'https://registry.terraform.io/v1/providers/${{ inputs.provider-source }}' | jq -r .version)" >> $GITHUB_OUTPUT
+
+      - name: Install goimports & run make generate
+        if: steps.bump-mk.outputs.bumped != ''
+        run: |
+          go install golang.org/x/tools/cmd/goimports
+          make generate
+
+      - name: New pull request
+        if: steps.bump-mk.outputs.bumped != ''
+        uses: peter-evans/create-pull-request@v4
+        with:
+          title: Bump native provider to version ${{ steps.bump-mk.outputs.version }}
+          commit-message: Bump native provider to version ${{ steps.bump-mk.outputs.version }}
+          committer: GitHub <noreply@github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          base: main
+          token: ${{ secrets.TOKEN }}
+          signoff: false
+          labels: |
+            automated
