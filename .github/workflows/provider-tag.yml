@@ -1,0 +1,28 @@
+name: Tag
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Release version (e.g. v0.1.0)'
+        required: true
+        type: string
+      message:
+        description: 'Tag message'
+        required: true
+        type: string
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create Tag
+        uses: negz/create-tag@v1
+        with:
+          version: ${{ inputs.version }}
+          message: ${{ inputs.message }}
+          token: ${{ secrets.GITHUB_TOKEN }}
