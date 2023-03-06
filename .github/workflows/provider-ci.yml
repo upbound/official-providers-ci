@@ -36,7 +36,7 @@ jobs:
   report-breaking-changes:
     runs-on: ubuntu-22.04
     needs: detect-noop
-    if: ${{ needs.detect-noop.outputs.noop != 'true' && inputs.upjet-based-provider == true }}
+    if: needs.detect-noop.outputs.noop != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -56,6 +56,7 @@ jobs:
         run: |
           make crddiff
       - name: Report native schema version changes
+        if: ${{ inputs.upjet-based-provider }}
         run: |
           make schema-version-diff
   lint:
@@ -157,7 +158,7 @@ jobs:
         run: git diff
 
       - name: Report Statistics
-        if: ${{ inputs.upjet-based-provider == true }}
+        if: ${{ inputs.upjet-based-provider }}
         run: head -1 _output/skipped_resources.csv
 
       - name: Publish skipped resources CSV to Github
