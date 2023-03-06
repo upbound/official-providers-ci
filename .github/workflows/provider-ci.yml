@@ -2,6 +2,11 @@ name: Provider CI
 
 on:
   workflow_call:
+    inputs:
+      upjet-based-provider:
+        required: false
+        type: boolean
+        default: true
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -31,7 +36,7 @@ jobs:
   report-breaking-changes:
     runs-on: ubuntu-22.04
     needs: detect-noop
-    if: needs.detect-noop.outputs.noop != 'true'
+    if: ${{ needs.detect-noop.outputs.noop != 'true' && inputs.upjet-based-provider == true }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -152,6 +157,7 @@ jobs:
         run: git diff
 
       - name: Report Statistics
+        if: ${{ inputs.upjet-based-provider == true }}
         run: head -1 _output/skipped_resources.csv
 
       - name: Publish skipped resources CSV to Github
