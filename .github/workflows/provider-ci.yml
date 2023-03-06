@@ -2,6 +2,11 @@ name: Provider CI
 
 on:
   workflow_call:
+    inputs:
+      upjet-based-provider:
+        required: false
+        type: boolean
+        default: true
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -51,6 +56,7 @@ jobs:
         run: |
           make crddiff
       - name: Report native schema version changes
+        if: ${{ inputs.upjet-based-provider }}
         run: |
           make schema-version-diff
   lint:
@@ -152,6 +158,7 @@ jobs:
         run: git diff
 
       - name: Report Statistics
+        if: ${{ inputs.upjet-based-provider }}
         run: head -1 _output/skipped_resources.csv
 
       - name: Publish skipped resources CSV to Github
