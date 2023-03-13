@@ -19,6 +19,11 @@ env:
   GOLANGCI_VERSION: 'v1.50.0'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
 
+  # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
+  # step 'if env.XXX' != ""', so we copy these to succinctly test whether
+  # credentials have been provided before trying to run steps that need them.
+  UPBOUND_MARKETPLACE_PUSH_ROBOT_USR: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+
 jobs:
   detect-noop:
     runs-on: ubuntu-22.04
