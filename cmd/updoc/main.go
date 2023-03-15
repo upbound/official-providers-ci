@@ -1,3 +1,5 @@
+// Package main is the main package for updoc,
+// the tool for publishing official provider docs.
 package main
 
 import (
@@ -10,7 +12,7 @@ import (
 )
 
 func main() {
-	opts := internal.UpDocOptions{}
+	opts := internal.Options{}
 
 	ctx := kong.Parse(&opts, kong.Name("updoc"),
 		kong.Description("Upbound enhanced document processor"),

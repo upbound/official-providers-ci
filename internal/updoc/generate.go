@@ -1,4 +1,4 @@
-package internal
+package updoc
 
 import (
 	"encoding/json"
@@ -18,11 +18,15 @@ const (
 	errDisplayName = "unable to find meta for %s"
 )
 
+// Sortable represents a sortable document section, like the title or a section
+// of a document.
 type Sortable interface {
 	w() int
 	d() string
 	l() string
 }
+
+// Title is the title of a document.
 type Title struct {
 	Title        string `yaml:"title"`
 	Weight       int    `yaml:"weight"`
@@ -39,6 +43,7 @@ func (t *Title) l() string {
 	return t.FileLocation
 }
 
+// Section is the section in a document.
 type Section struct {
 	Section string `yaml:"section"`
 	Weight  int    `yaml:"weight"`

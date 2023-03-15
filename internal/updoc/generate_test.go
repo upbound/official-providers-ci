@@ -1,4 +1,4 @@
-package internal
+package updoc
 
 import (
 	"encoding/json"
@@ -21,7 +21,7 @@ func TestIndexerRun(t *testing.T) {
 	}
 
 	type want struct {
-		m   string
+		m   func() ([]byte, error)
 		err error
 	}
 
@@ -41,13 +41,12 @@ func TestIndexerRun(t *testing.T) {
 				},
 			},
 			want: want{
-				m: func() string {
-					b, _ := json.MarshalIndent([]Item{{
+				m: func() ([]byte, error) {
+					return json.MarshalIndent([]Item{{
 						DisplayName: "Title",
 						Location:    "/1.md",
 					}}, "", "\t")
-					return string(b)
-				}(),
+				},
 			},
 		},
 		"SuccessfulMultiLevel": {
@@ -63,16 +62,15 @@ func TestIndexerRun(t *testing.T) {
 				},
 			},
 			want: want{
-				m: func() string {
-					b, _ := json.MarshalIndent([]Item{{
+				m: func() ([]byte, error) {
+					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 2",
 						Location:    "/1.md",
 					}, {
 						DisplayName: "Advanced/Title",
 						Location:    "/advanced/1.md",
 					}}, "", "\t")
-					return string(b)
-				}(),
+				},
 			},
 		},
 		"SuccessfulMultiLevelOtherStuff": {
@@ -90,16 +88,15 @@ func TestIndexerRun(t *testing.T) {
 				},
 			},
 			want: want{
-				m: func() string {
-					b, _ := json.MarshalIndent([]Item{{
+				m: func() ([]byte, error) {
+					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 2",
 						Location:    "/1.md",
 					}, {
 						DisplayName: "Advanced/Title",
 						Location:    "/advanced/1.md",
 					}}, "", "\t")
-					return string(b)
-				}(),
+				},
 			},
 		},
 		"SuccessfulMultiLevelComplex": {
@@ -127,8 +124,8 @@ func TestIndexerRun(t *testing.T) {
 				},
 			},
 			want: want{
-				m: func() string {
-					b, _ := json.MarshalIndent([]Item{{
+				m: func() ([]byte, error) {
+					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 9",
 						Location:    "/4.md",
 					}, {
@@ -159,8 +156,7 @@ func TestIndexerRun(t *testing.T) {
 						DisplayName: "Title 8",
 						Location:    "/3.md",
 					}}, "", "\t")
-					return string(b)
-				}(),
+				},
 			},
 		},
 		"ErrorCantFindDocs": {
@@ -207,7 +203,11 @@ func TestIndexerRun(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			if diff := cmp.Diff(tc.want.m, string(b)); diff != "" {
+			m, err := tc.want.m()
+			if err != nil {
+				t.Fatalf("invalid test JSON document: %s", err.Error())
+			}
+			if diff := cmp.Diff(string(m), string(b)); diff != "" {
 				t.Errorf("\n%s\nRun(...): -want err, +got err:\n%s", tc.reason, diff)
 			}
 		})

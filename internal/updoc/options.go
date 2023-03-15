@@ -1,5 +1,6 @@
-package internal
+package updoc
 
+// UploadOptions represents the options for the upload subcommand
 type UploadOptions struct {
 	DocsDir    string `name:"docs-dir" required:"" help:"Root directory to crawl for documents."`
 	Name       string `name:"name" required:"" help:"The name of the provider being processed."`
@@ -8,7 +9,9 @@ type UploadOptions struct {
 	CDNDomain  string `name:"cdn-domain" required:"" help:"CDN name to prefix processed urls with."`
 }
 
-type UpDocOptions struct {
+// Options represents the available subcommands of updoc:
+// "generate" and "upload".
+type Options struct {
 	Generate struct {
 		DocsDir string `name:"docs-dir" required:"" help:"Root directory to crawl for documents."`
 	} `kong:"cmd"`

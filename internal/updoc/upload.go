@@ -1,4 +1,4 @@
-package internal
+package updoc
 
 import (
 	"bytes"
@@ -24,11 +24,15 @@ const (
 	bucketIndexFileName = "upbound_%s_%s_index.json"
 )
 
+// BucketIndex represents an index file in the storage bucket.
 type BucketIndex struct {
 	Items []Item            `json:"tableOfContents"`
 	Meta  map[string]string `json:"metadata"`
 }
 
+// UploadManager represents a document uploader capable of
+// uploading contents of the specified io.Reader
+// under the specified name.
 type UploadManager struct {
 	upload func(ctx context.Context, bucket *storage.BucketHandle, name string, r io.Reader) error
 }
@@ -36,6 +40,7 @@ type UploadManager struct {
 // Option is an option that modifies a UploadManager
 type Option func(u *UploadManager)
 
+// New constructs a new UploadManager
 func New(opts ...Option) *UploadManager {
 	u := &UploadManager{
 		upload: upload,
@@ -48,12 +53,14 @@ func New(opts ...Option) *UploadManager {
 	return u
 }
 
+// WithUpload sets the `upload` function to be used by the UploadManager.
 func WithUpload(up func(ctx context.Context, bucket *storage.BucketHandle, name string, r io.Reader) error) Option {
 	return func(u *UploadManager) {
 		u.upload = up
 	}
 }
 
+// ProcessIndex processes the index documents and uploads them to the storage.
 func (u *UploadManager) ProcessIndex(opts UploadOptions, afs afero.Fs) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
@@ -87,11 +94,16 @@ func (u *UploadManager) ProcessIndex(opts UploadOptions, afs afero.Fs) error {
 }
 
 func (u *UploadManager) getIndex(afs afero.Fs, dir string, meta map[string]string) ([]Item, error) {
-	file, err := afs.Open(filepath.Join(dir, indexFN))
+	n := filepath.Join(dir, indexFN)
+	file, err := afs.Open(n)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("Failed to close file %q: %s\n", n, err.Error())
+		}
+	}()
 
 	var index = make([]Item, 0)
 	err = json.NewDecoder(file).Decode(&index)

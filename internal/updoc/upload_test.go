@@ -1,4 +1,4 @@
-package internal
+package updoc
 
 import (
 	"context"
@@ -193,9 +193,11 @@ func TestProcessIndex(t *testing.T) {
 
 func Write(t *testing.T, fs afero.Fs, fn string, content string) afero.Fs {
 	f, _ := fs.Create(fn)
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
-	if _, err := f.Write([]byte(content)); err != nil {
+	if _, err := f.WriteString(content); err != nil {
 		t.Errorf(err.Error())
 	}
 	return fs
