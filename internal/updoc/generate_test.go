@@ -44,7 +44,7 @@ func TestIndexerRun(t *testing.T) {
 				m: func() ([]byte, error) {
 					return json.MarshalIndent([]Item{{
 						DisplayName: "Title",
-						Location:    "/1.md",
+						Location:    "1.md",
 					}}, "", "\t")
 				},
 			},
@@ -65,10 +65,10 @@ func TestIndexerRun(t *testing.T) {
 				m: func() ([]byte, error) {
 					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 2",
-						Location:    "/1.md",
+						Location:    "1.md",
 					}, {
 						DisplayName: "Advanced/Title",
-						Location:    "/advanced/1.md",
+						Location:    "advanced/1.md",
 					}}, "", "\t")
 				},
 			},
@@ -91,10 +91,10 @@ func TestIndexerRun(t *testing.T) {
 				m: func() ([]byte, error) {
 					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 2",
-						Location:    "/1.md",
+						Location:    "1.md",
 					}, {
 						DisplayName: "Advanced/Title",
-						Location:    "/advanced/1.md",
+						Location:    "advanced/1.md",
 					}}, "", "\t")
 				},
 			},
@@ -127,34 +127,34 @@ func TestIndexerRun(t *testing.T) {
 				m: func() ([]byte, error) {
 					return json.MarshalIndent([]Item{{
 						DisplayName: "Title 9",
-						Location:    "/4.md",
+						Location:    "4.md",
 					}, {
 						DisplayName: "Beg/Title 99",
-						Location:    "/beginner/99.md",
+						Location:    "beginner/99.md",
 					}, {
 						DisplayName: "Title 2",
-						Location:    "/1.md",
+						Location:    "1.md",
 					}, {
 						DisplayName: "Advanced/Title",
-						Location:    "/advanced/1.md",
+						Location:    "advanced/1.md",
 					}, {
 						DisplayName: "Advanced/Expert/Title 5",
-						Location:    "/advanced/expert/1.md",
+						Location:    "advanced/expert/1.md",
 					}, {
 						DisplayName: "Advanced/Expert/Title 6",
-						Location:    "/advanced/expert/6.md",
+						Location:    "advanced/expert/6.md",
 					}, {
 						DisplayName: "Advanced/Expert/Title 5",
-						Location:    "/advanced/expert/5.md",
+						Location:    "advanced/expert/5.md",
 					}, {
 						DisplayName: "Advanced/Title 4",
-						Location:    "/advanced/4.md",
+						Location:    "advanced/4.md",
 					}, {
 						DisplayName: "Title 7",
-						Location:    "/2.md",
+						Location:    "2.md",
 					}, {
 						DisplayName: "Title 8",
-						Location:    "/3.md",
+						Location:    "3.md",
 					}}, "", "\t")
 				},
 			},
