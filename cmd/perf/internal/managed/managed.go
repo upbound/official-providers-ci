@@ -221,11 +221,11 @@ func calculateReadinessDuration(client dynamic.Interface, mrTemplatePaths map[st
 						return nil, err
 					}
 					readinessTime.Time = t
-				}
 
-				diff := readinessTime.Sub(creationTimestamp.Time)
-				result.Data = append(result.Data, common.Data{Value: diff.Seconds()})
-				break
+					diff := readinessTime.Sub(creationTimestamp.Time)
+					result.Data = append(result.Data, common.Data{Value: diff.Seconds()})
+					break
+				}
 			}
 		}
 		result.Metric = fmt.Sprintf("Time to Readiness of %s", m["kind"])
