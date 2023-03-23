@@ -8,16 +8,16 @@ on:
 
 env:
   GO_VERSION: '1.19'
+  UPTEST_VERSION: '83bd901'
 
 jobs:
-  upload:
+  publish-docs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: true
-          ref: '${{ inputs.version }}'
 
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -51,10 +51,12 @@ jobs:
       - name: Upload Docs
         env:
           GOOGLE_APPLICATION_CREDENTIALS: sa.json
+          PROVIDER_NAME: ${GITHUB_REPOSITORY#*/}
+          VER_MAJOR_MINOR: v${GITHUB_REF#"refs/heads/release-"}
         run: |
           if [[ "${GITHUB_REF##*/}" == release-* ]]; then
-            echo "Publishing Docs for ${GITHUB_REPOSITORY#*/}, v${GITHUB_REF#"refs/heads/release-"}"
-            go run github.com/upbound/uptest/cmd/updoc@main upload --docs-dir=./docs --name=${GITHUB_REPOSITORY#*/} --version=v${GITHUB_REF#"refs/heads/release-"} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
+            echo "Publishing Docs for ${{ env.PROVIDER_NAME }}, ${{ env.VER_MAJOR_MINOR }}"
+            go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir=./docs --name=${{ env.PROVIDER_NAME }} --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
           else
             echo "This job can only be run on release branches"
             exit 1
