@@ -13,6 +13,10 @@ on:
         default: '1.19'
         required: false
         type: string
+      package-type:
+        default: 'provider'
+        required: false
+        type: string
     secrets:
       UPTEST_CLOUD_CREDENTIALS:
         description: 'Uptest cloud credentials to be passed to the uptest target as environment variable'
@@ -123,10 +127,12 @@ jobs:
           echo "commit-sha=$OUTPUT" >> $GITHUB_OUTPUT
 
       - name: Find the Go Build Cache
+        if: ${{ inputs.package-type  == 'provider' }}
         id: go
         run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
+        if: ${{ inputs.package-type  == 'provider' }}
         uses: actions/cache@v3
         with:
           path: ${{ steps.go.outputs.cache }}
@@ -134,6 +140,7 @@ jobs:
           restore-keys: ${{ runner.os }}-build-uptest-
 
       - name: Cache Go Dependencies
+        if: ${{ inputs.package-type  == 'provider' }}
         uses: actions/cache@v3
         with:
           path: .work/pkg
@@ -141,6 +148,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pkg-
 
       - name: Vendor Dependencies
+        if: ${{ inputs.package-type  == 'provider' }}
         run: make vendor vendor.check
 
       - name: Run Uptest
