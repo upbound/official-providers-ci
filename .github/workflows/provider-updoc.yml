@@ -1,0 +1,63 @@
+name: Updoc
+
+on:
+  workflow_call:
+    secrets:
+      UPBOUND_CI_PROD_BUCKET_SA:
+        required: true
+
+env:
+  GO_VERSION: '1.19'
+  UPTEST_VERSION: '83bd901'
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Find the Go Build Cache
+        id: go
+        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+
+      - name: Cache the Go Build Cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.go.outputs.cache }}
+          key: ${{ runner.os }}-build-updoc-artifacts-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-build-updoc-artifacts-
+
+      - name: Cache Go Dependencies
+        uses: actions/cache@v3
+        with:
+          path: .work/pkg
+          key: ${{ runner.os }}-updoc-pkg-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-updoc-pkg-
+
+      - name: Create Service Account File
+        env:
+          GAC: ${{ secrets.UPBOUND_CI_PROD_BUCKET_SA }}
+        run: |
+          echo "${GAC}" > sa.json
+
+      - name: Upload Docs
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: sa.json
+          PROVIDER_NAME: ${GITHUB_REPOSITORY#*/}
+          VER_MAJOR_MINOR: v${GITHUB_REF#"refs/heads/release-"}
+        run: |
+          if [[ "${GITHUB_REF##*/}" == release-* ]]; then
+            echo "Publishing Docs for ${{ env.PROVIDER_NAME }}, ${{ env.VER_MAJOR_MINOR }}"
+            go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir=./docs --name=${{ env.PROVIDER_NAME }} --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
+          else
+            echo "This job can only be run on release branches"
+            exit 1
+          fi
