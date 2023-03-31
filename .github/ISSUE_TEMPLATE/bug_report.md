@@ -1,8 +1,8 @@
 ---
 name: Bug Report
 about: Help us diagnose and fix bugs in Uptest
-labels: bug
-title: "uptest: Example list not correctly parsed..."
+labels: bug,needs:triage
+title: 
 ---
 <!--
 Thank you for helping to improve Uptest!
