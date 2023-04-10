@@ -65,7 +65,7 @@ jobs:
         run: |
           make schema-version-diff
   lint:
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
