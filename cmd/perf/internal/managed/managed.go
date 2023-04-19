@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package managed contains functions about managed resource management during the experiment
 package managed
 
 import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 
 	log "github.com/sirupsen/logrus"
 
@@ -44,106 +47,77 @@ import (
 // RunExperiment runs the experiment according to command-line inputs.
 // Firstly the input manifests are deployed. After the all MRs are ready, time to readiness metrics are calculated.
 // Then, by default, all deployed MRs are deleted.
-func RunExperiment(mrTemplatePaths map[string]int, clean bool) ([]common.Result, error) { //nolint:gocyclo
-	var timeToReadinessResults []common.Result //nolint:prealloc
+func RunExperiment(mrTemplatePaths map[string]int, clean bool) ([]common.Result, error) {
+	var timeToReadinessResults []common.Result
 
 	client := createDynamicClient()
 
-	if err := applyResources(client, mrTemplatePaths); err != nil {
-		return nil, err
+	tmpFileName, err := applyResources(mrTemplatePaths)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot apply resources")
 	}
 
 	if err := checkReadiness(client, mrTemplatePaths); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot check readiness of resources")
 	}
 
-	timeToReadinessResults, err := calculateReadinessDuration(client, mrTemplatePaths)
+	timeToReadinessResults, err = calculateReadinessDuration(client, mrTemplatePaths)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot calculate time to readiness")
 	}
 
 	if clean {
 		log.Info("Deleting resources...")
-		if err := deleteResources(client, mrTemplatePaths); err != nil {
-			return nil, err
-		}
-		log.Info("Checking deletion of resources...")
-		if err := checkDeletion(client, mrTemplatePaths); err != nil {
-			return nil, err
+		if err := deleteResources(tmpFileName); err != nil {
+			return nil, errors.Wrap(err, "cannot delete resources")
 		}
 	}
 	return timeToReadinessResults, nil
 }
 
-func applyResources(client dynamic.Interface, mrTemplatePaths map[string]int) error {
-	file, err := os.Create(fmt.Sprintf("/tmp/test.yaml"))
+func applyResources(mrTemplatePaths map[string]int) (string, error) {
+	f, err := os.CreateTemp("/tmp", "")
 	if err != nil {
-		return err
-	}
-	if err := file.Close(); err != nil {
-		return err
+		return "", errors.Wrap(err, "cannot create input file")
 	}
 
 	for mrPath, count := range mrTemplatePaths {
 		m, err := readYamlFile(mrPath)
 		if err != nil {
-			return err
-		}
-		o := prepareUnstructuredObject(m)
-
-		f, err := os.OpenFile("/tmp/test.yaml", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-		if err != nil {
-			return err
+			return "", errors.Wrap(err, "cannot read template file")
 		}
 
 		for i := 1; i <= count; i++ {
-			o["metadata"].(map[string]interface{})["name"] = fmt.Sprintf("test-%d", i)
+			m["metadata"].(map[interface{}]interface{})["name"] = fmt.Sprintf("test%d", i)
 
-			b, err := yaml.Marshal(o)
+			b, err := yaml.Marshal(m)
 			if err != nil {
-				return err
+				return "", errors.Wrap(err, "cannot marshal object")
 			}
 
 			if _, err := f.Write(b); err != nil {
-				return err
+				return "", errors.Wrap(err, "cannot write manifest")
 			}
 
 			if _, err := f.WriteString("\n---\n\n"); err != nil {
-				return err
+				return "", errors.Wrap(err, "cannot write yaml separator")
 			}
-
-			log.Info(fmt.Sprintf("%s/%s was successfully created!\n", m["kind"], o["metadata"].(map[string]interface{})["name"]))
 		}
 
-		cmd := exec.Command("bash", "-c", fmt.Sprintf(`"kubectl" apply -f /tmp/test.yaml`)) // #nosec G204
-		stdout, _ := cmd.StdoutPipe()
-		if err := cmd.Start(); err != nil {
-			return errors.Wrap(err, "cannot start kubectl")
+		if err := f.Close(); err != nil {
+			return "", errors.Wrap(err, "cannot close input file")
 		}
-		sc := bufio.NewScanner(stdout)
-		sc.Split(bufio.ScanLines)
-		for sc.Scan() {
-			fmt.Println(sc.Text())
-		}
-		if err := cmd.Wait(); err != nil {
-			return err
+
+		if err := runCommand(fmt.Sprintf(`"kubectl" apply -f %s`, f.Name())); err != nil {
+			return "", errors.Wrap(err, "cannot execute kubectl apply command")
 		}
 	}
-	return nil
+	return f.Name(), nil
 }
 
-func deleteResources(client dynamic.Interface, mrTemplatePaths map[string]int) error {
-	for mrPath := range mrTemplatePaths {
-		m, err := readYamlFile(mrPath)
-		if err != nil {
-			return err
-		}
-
-		background := metav1.DeletePropagationBackground
-		if err := client.Resource(prepareGvk(m)).DeleteCollection(context.TODO(),
-			metav1.DeleteOptions{PropagationPolicy: &background}, metav1.ListOptions{}); err != nil {
-			return err
-		}
+func deleteResources(tmpFileName string) error {
+	if err := runCommand(fmt.Sprintf(`"kubectl" delete -f %s`, tmpFileName)); err != nil {
+		return errors.Wrap(err, "cannot execute kubectl delete command")
 	}
 	return nil
 }
@@ -152,14 +126,14 @@ func checkReadiness(client dynamic.Interface, mrTemplatePaths map[string]int) er
 	for mrPath := range mrTemplatePaths {
 		m, err := readYamlFile(mrPath)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot read template file")
 		}
 
 		for {
 			log.Info("Checking readiness of resources...")
-			list, err := client.Resource(prepareGvk(m)).List(context.TODO(), metav1.ListOptions{})
+			list, err := client.Resource(prepareGVR(m)).List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "cannot list resources")
 			}
 			if isReady(list) {
 				break
@@ -193,19 +167,19 @@ func isReady(list *unstructured.UnstructuredList) bool {
 }
 
 func calculateReadinessDuration(client dynamic.Interface, mrTemplatePaths map[string]int) ([]common.Result, error) {
-	var results []common.Result //nolint:prealloc
+	var results []common.Result //nolint:prealloc // The size of the slice is not previously known.
 	for mrPath := range mrTemplatePaths {
 		log.Info("Calculating readiness time of resources...")
 		var result common.Result
 
 		m, err := readYamlFile(mrPath)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot read template file")
 		}
 
-		list, err := client.Resource(prepareGvk(m)).List(context.TODO(), metav1.ListOptions{})
+		list, err := client.Resource(prepareGVR(m)).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "cannot list resources")
 		}
 		for _, l := range list.Items {
 			readinessTime := metav1.Time{}
@@ -236,67 +210,29 @@ func calculateReadinessDuration(client dynamic.Interface, mrTemplatePaths map[st
 	return results, nil
 }
 
-func checkDeletion(client dynamic.Interface, mrTemplatePaths map[string]int) error {
-	for mrPath := range mrTemplatePaths {
-		m, err := readYamlFile(mrPath)
-		if err != nil {
-			return err
-		}
-
-		for {
-			log.Info("Checking deletion of resources...")
-			list, err := client.Resource(prepareGvk(m)).List(context.TODO(), metav1.ListOptions{})
-			if err != nil {
-				return err
-			}
-			if len(list.Items) == 0 {
-				break
-			}
-			time.Sleep(10 * time.Second)
-		}
-	}
-	return nil
-}
-
-func prepareGvk(m map[interface{}]interface{}) schema.GroupVersionResource {
-	suffix := "s"
+func prepareGVR(m map[interface{}]interface{}) schema.GroupVersionResource {
 	apiVersion := strings.Split(m["apiVersion"].(string), "/")
 	kind := strings.ToLower(m["kind"].(string))
-
-	if kind[len(kind)-1] == 'y' {
-		kind = kind[:len(kind)-1]
-		suffix = "ies"
-	}
-	return schema.GroupVersionResource{
-		Group:    apiVersion[0],
-		Version:  apiVersion[1],
-		Resource: fmt.Sprintf("%s%s", kind, suffix),
-	}
-}
-
-func prepareUnstructuredObject(m map[interface{}]interface{}) map[string]interface{} {
-	result := map[string]interface{}{}
-	for k, v := range m {
-		t, ok := v.(map[interface{}]interface{})
-		if ok {
-			result[k.(string)] = prepareUnstructuredObject(t)
-		} else {
-			result[k.(string)] = v
-		}
-	}
-	return result
+	pluralGVR, _ := meta.UnsafeGuessKindToResource(
+		schema.GroupVersionKind{
+			Group:   apiVersion[0],
+			Version: apiVersion[1],
+			Kind:    kind,
+		},
+	)
+	return pluralGVR
 }
 
 func readYamlFile(fileName string) (map[interface{}]interface{}, error) {
-	yamlFile, err := ioutil.ReadFile(fileName) //nolint:gosec
+	yamlFile, err := os.ReadFile(filepath.Clean(fileName))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot read file")
 	}
 
 	m := make(map[interface{}]interface{})
 	err = yaml.Unmarshal(yamlFile, m)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot marshal map")
 	}
 
 	return m, nil
@@ -304,4 +240,21 @@ func readYamlFile(fileName string) (map[interface{}]interface{}, error) {
 
 func createDynamicClient() dynamic.Interface {
 	return dynamic.NewForConfigOrDie(ctrl.GetConfigOrDie())
+}
+
+func runCommand(command string) error {
+	cmd := exec.Command("bash", "-c", command) // #nosec G204
+	stdout, _ := cmd.StdoutPipe()
+	if err := cmd.Start(); err != nil {
+		return errors.Wrap(err, "cannot start kubectl")
+	}
+	sc := bufio.NewScanner(stdout)
+	sc.Split(bufio.ScanLines)
+	for sc.Scan() {
+		fmt.Println(sc.Text())
+	}
+	if err := cmd.Wait(); err != nil {
+		return errors.Wrap(err, "cannot wait for the command exit")
+	}
+	return nil
 }

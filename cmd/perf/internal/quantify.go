@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package internal contains methods about quantifying the provider metrics
 package internal
 
 import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/upbound/uptest/cmd/perf/internal/common"
 	"github.com/upbound/uptest/cmd/perf/internal/managed"
@@ -41,6 +44,7 @@ type QuantifyOptions struct {
 	stepDuration      time.Duration
 	clean             bool
 	nodeIP            string
+	timeout           time.Duration
 }
 
 // NewCmdQuantify creates a cobra command
@@ -62,9 +66,10 @@ func NewCmdQuantify() *cobra.Command {
 		"Namespace name of provider")
 	o.cmd.Flags().StringToIntVar(&o.mrPaths, "mrs", nil, "Managed resource templates that will be deployed")
 	o.cmd.Flags().StringVar(&o.address, "address", "http://localhost:9090", "Address of Prometheus service")
-	o.cmd.Flags().DurationVar(&o.stepDuration, "step-duration", 30*time.Second, "Step duration between two data points")
+	o.cmd.Flags().DurationVar(&o.stepDuration, "step-duration", 1*time.Second, "Step duration between two data points")
 	o.cmd.Flags().BoolVar(&o.clean, "clean", true, "Delete deployed MRs")
 	o.cmd.Flags().StringVar(&o.nodeIP, "node", "", "Node IP")
+	o.cmd.Flags().DurationVar(&o.timeout, "timeout", 120*time.Minute, "Timeout for the experiment")
 
 	if err := o.cmd.MarkFlagRequired("provider-pod"); err != nil {
 		panic(err)
@@ -80,10 +85,30 @@ func NewCmdQuantify() *cobra.Command {
 func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	o.startTime = time.Now()
 	log.Infof("Experiment Started %v\n\n", o.startTime)
-	timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean)
-	if err != nil {
-		return err
+
+	results := make(chan []common.Result, 5)
+	errChan := make(chan error, 1)
+	go func() {
+		timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean)
+		if err != nil {
+			errChan <- errors.Wrap(err, "cannot run experiment")
+			return
+		}
+		errChan <- nil
+		results <- timeToReadinessResults
+	}()
+
+	var timeToReadinessResults []common.Result
+	select {
+	case res := <-results:
+		if err := <-errChan; err != nil {
+			return errors.Wrap(err, "")
+		}
+		timeToReadinessResults = res
+	case <-time.After(o.timeout):
+		fmt.Println("Experiment duration exceeded")
 	}
+
 	o.endTime = time.Now()
 	log.Infof("\nExperiment Ended %v\n\n", o.endTime)
 	log.Infof("Results\n------------------------------------------------------------\n")
@@ -92,41 +117,44 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	queryResultMemory, err := o.CollectData(fmt.Sprintf(`sum(node_namespace_pod_container:container_memory_working_set_bytes{pod="%s", namespace="%s"})`,
 		o.providerPod, o.providerNamespace))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot collect memory data")
 	}
 	memoryResult, err := common.ConstructResult(queryResultMemory, "Memory", "Bytes")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot construct memory results")
 	}
 	qureyResultCPURate, err := o.CollectData(fmt.Sprintf(`instance:node_cpu_utilisation:rate5m{instance="%s"} * 100`, o.nodeIP))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot collect cpu data")
 	}
 	cpuRateResult, err := common.ConstructResult(qureyResultCPURate, "CPU", "Rate")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cannot construct cpu results")
 	}
 	for _, timeToReadinessResult := range timeToReadinessResults {
-		timeToReadinessResult.String()
+		timeToReadinessResult.Print()
 	}
-	memoryResult.String()
-	cpuRateResult.String()
+	memoryResult.Print()
+	cpuRateResult.Print()
 	return nil
 }
 
 // CollectData sends query and collect data by using the prometheus client
 func (o *QuantifyOptions) CollectData(query string) (model.Value, error) {
-	client := common.ConstructPrometheusClient(o.address)
+	client, err := common.ConstructPrometheusClient(o.address)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot construct prometheus client")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	r := common.ConstructTimeRange(o.startTime, o.endTime.Add(60*time.Second), o.stepDuration)
 	result, warnings, err := client.QueryRange(ctx, query, r)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "cannot construct time range for metrics")
 	}
 	if len(warnings) > 0 {
 		log.Infof("Warnings: %v\n", warnings)
 	}
-	return result, err
+	return result, nil
 }

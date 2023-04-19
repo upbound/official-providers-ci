@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package common is for some common functions for tooling
 package common
 
 import (
 	"fmt"
-	"os"
-	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 
@@ -43,17 +44,16 @@ type Result struct {
 }
 
 // ConstructPrometheusClient creates a Prometheus API Client
-func ConstructPrometheusClient(address string) v1.API {
+func ConstructPrometheusClient(address string) (v1.API, error) {
 	client, err := api.NewClient(api.Config{
 		Address: address,
 	})
 
 	if err != nil {
-		fmt.Printf("Error creating client: %v\n", err)
-		os.Exit(1)
+		return nil, errors.Wrap(err, "error creating client")
 	}
 
-	return v1.NewAPI(client)
+	return v1.NewAPI(client), nil
 }
 
 // ConstructTimeRange creates a Range object that consists the start time, end time and step duration
@@ -68,14 +68,14 @@ func ConstructTimeRange(startTime, endTime time.Time, stepDuration time.Duration
 // ConstructResult creates a Result object from collected data
 func ConstructResult(value model.Value, metric, unit string) (*Result, error) {
 	result := &Result{}
-	matrix := value.(model.Matrix)
+	matrix, ok := value.(model.Matrix)
+	if !ok {
+		return nil, errors.New("model cannot cast to matrix")
+	}
 
 	for _, m := range matrix {
 		for _, v := range m.Values {
-			valueNum, err := strconv.ParseFloat(v.Value.String(), 64)
-			if err != nil {
-				return nil, err
-			}
+			valueNum := float64(v.Value)
 			result.Data = append(result.Data, Data{Timestamp: v.Timestamp.Time(), Value: valueNum})
 		}
 	}
@@ -99,7 +99,8 @@ func CalculateAverageAndPeak(data []Data) (float64, float64) {
 	return sum / float64(len(data)), peak
 }
 
-func (r Result) String() {
+// Print reports the results
+func (r Result) Print() {
 	log.Info(fmt.Sprintf("Average %s: %f %s \n", r.Metric, r.Average, r.MetricUnit))
 	log.Info(fmt.Sprintf("Peak %s: %f %s \n", r.Metric, r.Peak, r.MetricUnit))
 }
