@@ -18,7 +18,7 @@ PLATFORMS ?= linux_amd64 linux_arm64 darwin_amd64 darwin_arm64
 # Setup Go
 GO_REQUIRED_VERSION = 1.19
 GOLANGCILINT_VERSION ?= 1.50.0
-GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/uptest $(GO_PROJECT)/cmd/updoc $(GO_PROJECT)/cmd/ttr
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/uptest $(GO_PROJECT)/cmd/updoc $(GO_PROJECT)/cmd/ttr $(GO_PROJECT)/cmd/perf
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal
 GO111MODULE = on
