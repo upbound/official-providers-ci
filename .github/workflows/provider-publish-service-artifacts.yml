@@ -26,9 +26,7 @@ env:
   
 jobs:  
   publish-service-artifacts:
-    if: ${{ github.actor == 'OWNER' || github.actor == 'turkenf' || contains(github.event.repository.collaborators, github.actor) }}
     runs-on: ubuntu-22.04
-
     steps:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v1
@@ -84,7 +82,15 @@ jobs:
         run: make vendor vendor.check
 
       - name: Build Artifacts
-        run: echo make -j 3 SUBPACKAGES="${{ inputs.subpackages }}" build.all
+        id: build_artifacts
+        run: |
+          packages=($(echo ${{ inputs.subpackages }} | tr ' ' '\n'))
+          num_packages=${#packages[@]}
+          if [ $num_packages -gt 10 ]; then
+            num_packages=10
+          fi
+          make -j $num_packages SUBPACKAGES="${{ inputs.subpackages }}" build.all
+          echo "num_packages=$num_packages" >> $GITHUB_OUTPUT
         env:
           # We're using docker buildx, which doesn't actually load the images it
           # builds by default. Specifying --load does so.
@@ -97,4 +103,5 @@ jobs:
           path: _output/**
 
       - name: Publish Artifacts
-        run: echo make -j 3 SUBPACKAGES="${{ inputs.subpackages }}" BRANCH_NAME=main publish
+        run: |
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ inputs.subpackages }}" publish
