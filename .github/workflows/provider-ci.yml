@@ -107,6 +107,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: ${{ env.GOLANGCI_VERSION }}
+          args: --timeout=1h
 
   check-diff:
     runs-on: ubuntu-22.04
