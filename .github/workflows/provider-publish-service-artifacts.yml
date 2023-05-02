@@ -5,6 +5,11 @@ on:
     inputs:
       subpackages:
         description: 'Subpackages to be built individually (e.g. monolith config ec2)'
+        default: 'monolith'
+        required: false
+        type: string
+      version:
+        description: 'Provider version (e.g. v0.1.0)'
         required: true
         type: string
     secrets:
@@ -89,7 +94,7 @@ jobs:
           if [ $num_packages -gt 10 ]; then
             num_packages=10
           fi
-          make -j $num_packages SUBPACKAGES="${{ inputs.subpackages }}" build.all
+          make -j $num_packages SUBPACKAGES="${{ inputs.subpackages }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates VERSION=${{ inputs.version }} build.all
           echo "num_packages=$num_packages" >> $GITHUB_OUTPUT
         env:
           # We're using docker buildx, which doesn't actually load the images it
@@ -104,4 +109,4 @@ jobs:
 
       - name: Publish Artifacts
         run: |
-          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ inputs.subpackages }}" publish
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ inputs.subpackages }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates VERSION=${{ inputs.version }} publish
