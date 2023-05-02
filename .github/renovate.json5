@@ -24,7 +24,8 @@
       ],
       "datasourceTemplate": "golang-version",
       "depNameTemplate": "golang"
-    }, {
+    }
+//    }, {
 // We want a PR to bump golangci-lint versions used through env variables in
 // any Github Actions, taking it from the official Github repository tags.
 // TODO: For now new versions of GOLANGCI-LINT leads to failing Tests in some our repos. We will not update it automatically. 
