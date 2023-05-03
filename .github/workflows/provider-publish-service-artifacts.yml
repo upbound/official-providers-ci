@@ -31,7 +31,7 @@ env:
   
 jobs:  
   publish-service-artifacts:
-    runs-on: ubuntu-22.04
+    runs-on: [e2-standard-8, linux]
     steps:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v1

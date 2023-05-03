@@ -24,18 +24,16 @@
       ],
       "datasourceTemplate": "golang-version",
       "depNameTemplate": "golang"
-    }
-//    }, {
+    }, {
 // We want a PR to bump golangci-lint versions used through env variables in
 // any Github Actions, taking it from the official Github repository tags.
-// TODO: For now new versions of GOLANGCI-LINT leads to failing Tests in some our repos. We will not update it automatically. 
-//      "fileMatch": ["^\\.github\\/workflows\\/[^/]+\\.ya?ml$"],
-//      "matchStrings": [
-//        "GOLANGCI_VERSION: '(?<currentValue>.*?)'\\n"
-//      ],
-//      "datasourceTemplate": "github-tags",
-//      "depNameTemplate": "golangci/golangci-lint"
-//    }
+      "fileMatch": ["^\\.github\\/workflows\\/[^/]+\\.ya?ml$"],
+      "matchStrings": [
+        "GOLANGCI_VERSION: '(?<currentValue>.*?)'\\n"
+      ],
+      "datasourceTemplate": "github-tags",
+      "depNameTemplate": "golangci/golangci-lint"
+    }
   ],
 // PackageRules disabled below should be enabled in case of vulnerabilities
   "vulnerabilityAlerts": {
@@ -96,8 +94,8 @@
         "sigs.k8s.io"
       ],
       "matchUpdateTypes": [
-        "major",
-      ],
+        "major"
+      ]
     }, {
 // We want a single PR for all minor and patch bumps to non-kubernetes Go
 // dependencies, but only if there are known vulnerabilities in the current
