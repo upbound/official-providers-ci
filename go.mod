@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/storage v1.27.0
 	github.com/adrg/frontmatter v0.2.0
 	github.com/alecthomas/kong v0.7.1
-	github.com/crossplane/crossplane-runtime v0.19.1
+	github.com/crossplane/crossplane-runtime v0.19.2
 	github.com/getkin/kin-openapi v0.108.0
 	github.com/google/go-cmp v0.5.9
 	github.com/pkg/errors v0.9.1
