@@ -65,7 +65,7 @@ jobs:
         run: |
           make schema-version-diff
   lint:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ubuntu-22.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
@@ -265,7 +265,7 @@ jobs:
         run: make local-deploy
 
   publish-artifacts:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ubuntu-22.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
