@@ -132,12 +132,6 @@ jobs:
           # builds by default. Specifying --load does so.
           BUILD_ARGS: "--load"
 
-      - name: Upload Artifacts to GitHub
-        uses: actions/upload-artifact@v3
-        with:
-          name: output
-          path: _output/**
-
       - name: Publish Artifacts
         run: |
           make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
