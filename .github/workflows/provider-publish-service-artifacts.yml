@@ -46,11 +46,8 @@ jobs:
       indices: ${{ steps.calc.outputs.indices }}
     steps:
       - id: calc
-        env:
-          subpackages: ${{ inputs.subpackages }}
-          size: ${{ inputs.size }}
         run: |
-          python3 -c "import math, os; print(f'indices={list(range(0, math.ceil(len(os.getenv(\"subpackages\").split()) / int(os.getenv(\"size\")))))}')" >> "$GITHUB_OUTPUT"
+          python3 -c "import math; print(f'indices={list(range(0, math.ceil(len(\"${{ inputs.subpackages }}\".split()) / int(\"${{ inputs.size }}\"))))}')" >> "$GITHUB_OUTPUT"
 
   publish-service-artifacts:
     strategy:
@@ -117,12 +114,8 @@ jobs:
 
       - name: Calculate packages to build & push
         id: packages
-        env:
-          subpackages: ${{ inputs.subpackages }}
-          size: ${{ inputs.size }}
-          index: ${{ matrix.index }}
         run: |
-          echo target=$(python3 -c "import os; print(' '.join(os.getenv(\"subpackages\").split()[int(os.getenv(\"index\")) * int(os.getenv(\"size\")): (int(os.getenv(\"index\"))+1) * int(os.getenv(\"size\"))]))") >> "$GITHUB_OUTPUT"
+          echo target=$(python3 -c "print(' '.join(\"${{ inputs.subpackages }}\".split()[int(\"${{ matrix.index }}\") * int(\"${{ inputs.size }}\"): (int(\"${{ matrix.index }}\")+1) * int(\"${{ inputs.size }}\")]))") >> "$GITHUB_OUTPUT"
 
       - name: Build Artifacts
         id: build_artifacts
