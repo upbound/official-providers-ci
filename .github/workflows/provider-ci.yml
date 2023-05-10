@@ -81,20 +81,22 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+        id: go_cache
+        run: |
+          echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT && \
+          echo "mod_cache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go.outputs.cache }}
+          path: ${{ steps.go_cache.outputs.cache }}
           key: ${{ runner.os }}-build-lint-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-build-lint-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v3
         with:
-          path: .work/pkg
+          path: ${{ steps.go_cache.outputs.mod_cache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
@@ -128,20 +130,22 @@ jobs:
         run: go install golang.org/x/tools/cmd/goimports
 
       - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+        id: go_cache
+        run: |
+          echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT && \
+          echo "mod_cache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go.outputs.cache }}
+          path: ${{ steps.go_cache.outputs.cache }}
           key: ${{ runner.os }}-build-check-diff-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-build-check-diff-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v3
         with:
-          path: .work/pkg
+          path: ${{ steps.go_cache.outputs.mod_cache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
@@ -192,20 +196,22 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+        id: go_cache
+        run: |
+          echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT && \
+          echo "mod_cache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go.outputs.cache }}
+          path: ${{ steps.go_cache.outputs.cache }}
           key: ${{ runner.os }}-build-unit-tests-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-build-unit-tests-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v3
         with:
-          path: .work/pkg
+          path: ${{ steps.go_cache.outputs.mod_cache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
@@ -241,20 +247,22 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+        id: go_cache
+        run: |
+          echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT && \
+          echo "mod_cache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go.outputs.cache }}
+          path: ${{ steps.go_cache.outputs.cache }}
           key: ${{ runner.os }}-build-unit-tests-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-build-unit-tests-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v3
         with:
-          path: .work/pkg
+          path: ${{ steps.go_cache.outputs.mod_cache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
@@ -303,20 +311,22 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Find the Go Build Cache
-        id: go
-        run: echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
+        id: go_cache
+        run: |
+          echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT && \
+          echo "mod_cache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.go.outputs.cache }}
+          path: ${{ steps.go_cache.outputs.cache }}
           key: ${{ runner.os }}-build-publish-artifacts-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-build-publish-artifacts-
 
       - name: Cache Go Dependencies
         uses: actions/cache@v3
         with:
-          path: .work/pkg
+          path: ${{ steps.go_cache.outputs.mod_cache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-pkg-
 
