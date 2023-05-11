@@ -115,6 +115,16 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	log.Infof("Results\n------------------------------------------------------------\n")
 	log.Infof("Experiment Duration: %f seconds\n", o.endTime.Sub(o.startTime).Seconds())
 	time.Sleep(60 * time.Second)
+
+	err := o.processPods(timeToReadinessResults)
+	if err != nil {
+		return errors.Wrap(err, "cannot process pods")
+	}
+	return nil
+}
+
+// processPods calculated metrics for provider pods
+func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error {
 	// Initialize aggregated results
 	var aggregatedMemoryResult, aggregatedCPURateResult common.Result
 
