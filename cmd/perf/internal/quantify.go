@@ -126,7 +126,8 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 // processPods calculated metrics for provider pods
 func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error {
 	// Initialize aggregated results
-	var aggregatedMemoryResult, aggregatedCPURateResult common.Result
+	var aggregatedMemoryResult = &common.Result{Metric: "Memory", MetricUnit: "Bytes"}
+	var aggregatedCPURateResult = &common.Result{Metric: "CPU", MetricUnit: "Rate"}
 
 	for _, providerPod := range o.providerPods {
 		providerPod = strings.TrimSpace(providerPod)
