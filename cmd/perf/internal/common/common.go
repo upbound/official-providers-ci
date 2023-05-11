@@ -104,7 +104,9 @@ func CalculateAverageAndPeak(data []Data) (float64, float64) {
 
 // Print reports the results
 func (r Result) Print() {
-	log.Info(fmt.Sprintf("Pod: %s", r.PodName))
+	if r.PodName != "" {
+		log.Info(fmt.Sprintf("Pod: %s", r.PodName))
+	}
 	log.Info(fmt.Sprintf("Average %s: %f %s \n", r.Metric, r.Average, r.MetricUnit))
 	log.Info(fmt.Sprintf("Peak %s: %f %s \n", r.Metric, r.Peak, r.MetricUnit))
 }
