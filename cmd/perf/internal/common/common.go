@@ -41,6 +41,7 @@ type Result struct {
 	Metric        string
 	MetricUnit    string
 	Peak, Average float64
+	PodName       string
 }
 
 // ConstructPrometheusClient creates a Prometheus API Client
@@ -66,8 +67,10 @@ func ConstructTimeRange(startTime, endTime time.Time, stepDuration time.Duration
 }
 
 // ConstructResult creates a Result object from collected data
-func ConstructResult(value model.Value, metric, unit string) (*Result, error) {
-	result := &Result{}
+func ConstructResult(value model.Value, metric, unit string, podName string) (*Result, error) {
+	result := &Result{
+		PodName: podName,
+	}
 	matrix, ok := value.(model.Matrix)
 	if !ok {
 		return nil, errors.New("model cannot cast to matrix")
@@ -101,6 +104,7 @@ func CalculateAverageAndPeak(data []Data) (float64, float64) {
 
 // Print reports the results
 func (r Result) Print() {
+	log.Info(fmt.Sprintf("Pod: %s", r.PodName))
 	log.Info(fmt.Sprintf("Average %s: %f %s \n", r.Metric, r.Average, r.MetricUnit))
 	log.Info(fmt.Sprintf("Peak %s: %f %s \n", r.Metric, r.Peak, r.MetricUnit))
 }

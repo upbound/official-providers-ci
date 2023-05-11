@@ -125,7 +125,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 		if err != nil {
 			return errors.Wrap(err, "cannot collect memory data")
 		}
-		memoryResult, err := common.ConstructResult(queryResultMemory, "Memory", "Bytes")
+		memoryResult, err := common.ConstructResult(queryResultMemory, "Memory", "Bytes", providerPod)
 		if err != nil {
 			return errors.Wrap(err, "cannot construct memory results")
 		}
@@ -139,7 +139,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 		if err != nil {
 			return errors.Wrap(err, "cannot collect cpu data")
 		}
-		cpuRateResult, err := common.ConstructResult(queryResultCPURate, "CPU", "Rate")
+		cpuRateResult, err := common.ConstructResult(queryResultCPURate, "CPU", "Rate", providerPod)
 		if err != nil {
 			return errors.Wrap(err, "cannot construct cpu results")
 		}
