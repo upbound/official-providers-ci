@@ -20,7 +20,7 @@ on:
       concurrency:
         description: "Number of parallel package builds in each matrix job"
         optional: true
-        default: 0
+        default: 1
         type: number
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
@@ -33,6 +33,7 @@ env:
   GO_VERSION: '1.19'
   GOLANGCI_VERSION: 'v1.50.0'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
+  UP_VERSION: 'v0.17.0'
 
   # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
   # step 'if env.XXX' != ""', so we copy these to succinctly test whether
@@ -69,12 +70,13 @@ jobs:
           install: true
 
       - name: Login to Upbound
-        uses: docker/login-action@v2
         if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
-        with:
-          registry: xpkg.upbound.io
-          username: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
-          password: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+        env:
+          UP_PASSWORD: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+        run: |
+          curl -fsSLo /tmp/up --create-dirs 'https://cli.upbound.io/stable/${{ env.UP_VERSION }}/bin/linux_amd64/up' && \
+          chmod +x /tmp/up && \
+          /tmp/up login -u ${{ env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
 
       - name: Checkout
         uses: actions/checkout@v2
