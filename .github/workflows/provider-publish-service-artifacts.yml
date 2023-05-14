@@ -14,14 +14,14 @@ on:
         type: string
       size:
         description: "Number of packages to build and push with each matrix build job"
+        default: '30'
         required: true
-        default: 30
-        type: number
+        type: string
       concurrency:
         description: "Number of parallel package builds in each matrix job"
-        optional: true
-        default: 1
-        type: number
+        default: '1'
+        required: false
+        type: string
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -136,4 +136,4 @@ jobs:
 
       - name: Publish Artifacts
         run: |
-          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates BRANCH_NAME=main VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
