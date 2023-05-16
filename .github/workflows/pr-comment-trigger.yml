@@ -27,7 +27,7 @@ on:
 
 jobs:
   debug:
-    runs-on: ubuntu-latest
+    runs-on: [e2-standard-8, linux]
     steps:
       - name: Debug
         run: |
@@ -40,7 +40,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
             github.event.issue.pull_request &&
             contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: ubuntu-22.04
+    runs-on: [e2-standard-8, linux]
     outputs:
       example_list: ${{ steps.get-example-list-name.outputs.example-list }}
       example_hash: ${{ steps.get-example-list-name.outputs.example-hash }}
@@ -97,7 +97,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
       github.event.issue.pull_request &&
       contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: ubuntu-22.04
+    runs-on: [e2-standard-8, linux]
     needs: get-example-list
 
     steps:
