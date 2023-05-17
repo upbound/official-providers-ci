@@ -88,7 +88,7 @@ func applyResources(mrTemplatePaths map[string]int) (string, error) {
 		}
 
 		for i := 1; i <= count; i++ {
-			m["metadata"].(map[interface{}]interface{})["name"] = fmt.Sprintf("test%d", i)
+			m["metadata"].(map[interface{}]interface{})["name"] = fmt.Sprintf("testperfrun%d", i)
 
 			b, err := yaml.Marshal(m)
 			if err != nil {
