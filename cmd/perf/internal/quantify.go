@@ -18,6 +18,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -34,7 +35,7 @@ import (
 
 // QuantifyOptions represents the options of quantify command
 type QuantifyOptions struct {
-	providerPod       string
+	providerPods      []string
 	providerNamespace string
 	mrPaths           map[string]int
 	cmd               *cobra.Command
@@ -56,12 +57,12 @@ func NewCmdQuantify() *cobra.Command {
 			"reports them. When you execute this tool an end-to-end experiment will run.",
 		Example: "provider-scale --mrs ./internal/providerScale/manifests/virtualnetwork.yaml=2 " +
 			"--mrs ./internal/providerScale/manifests/loadbalancer.yaml=2" +
-			"--provider-pod crossplane-provider-jet-azure " +
+			"--provider-pods crossplane-provider-jet-azure " +
 			"--provider-namespace crossplane-system",
 		RunE: o.Run,
 	}
 
-	o.cmd.Flags().StringVar(&o.providerPod, "provider-pod", "", "Pod name of provider")
+	o.cmd.Flags().StringSliceVarP(&o.providerPods, "provider-pods", "p", []string{}, "Names of the provider pods. Multiple names can be specified, separated by commas (spaces are ignored).")
 	o.cmd.Flags().StringVar(&o.providerNamespace, "provider-namespace", "crossplane-system",
 		"Namespace name of provider")
 	o.cmd.Flags().StringToIntVar(&o.mrPaths, "mrs", nil, "Managed resource templates that will be deployed")
@@ -71,7 +72,7 @@ func NewCmdQuantify() *cobra.Command {
 	o.cmd.Flags().StringVar(&o.nodeIP, "node", "", "Node IP")
 	o.cmd.Flags().DurationVar(&o.timeout, "timeout", 120*time.Minute, "Timeout for the experiment")
 
-	if err := o.cmd.MarkFlagRequired("provider-pod"); err != nil {
+	if err := o.cmd.MarkFlagRequired("provider-pods"); err != nil {
 		panic(err)
 	}
 	if err := o.cmd.MarkFlagRequired("mrs"); err != nil {
@@ -114,28 +115,63 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	log.Infof("Results\n------------------------------------------------------------\n")
 	log.Infof("Experiment Duration: %f seconds\n", o.endTime.Sub(o.startTime).Seconds())
 	time.Sleep(60 * time.Second)
-	queryResultMemory, err := o.CollectData(fmt.Sprintf(`sum(node_namespace_pod_container:container_memory_working_set_bytes{pod="%s", namespace="%s"})`,
-		o.providerPod, o.providerNamespace))
+
+	err := o.processPods(timeToReadinessResults)
 	if err != nil {
-		return errors.Wrap(err, "cannot collect memory data")
+		return errors.Wrap(err, "cannot process pods")
 	}
-	memoryResult, err := common.ConstructResult(queryResultMemory, "Memory", "Bytes")
-	if err != nil {
-		return errors.Wrap(err, "cannot construct memory results")
+	return nil
+}
+
+// processPods calculated metrics for provider pods
+func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error {
+	// Initialize aggregated results
+	var aggregatedMemoryResult = &common.Result{Metric: "Memory", MetricUnit: "Bytes"}
+	var aggregatedCPURateResult = &common.Result{Metric: "CPU", MetricUnit: "Rate"}
+
+	for _, providerPod := range o.providerPods {
+		providerPod = strings.TrimSpace(providerPod)
+		queryResultMemory, err := o.CollectData(fmt.Sprintf(`sum(node_namespace_pod_container:container_memory_working_set_bytes{pod="%s", namespace="%s"})`,
+			providerPod, o.providerNamespace))
+		if err != nil {
+			return errors.Wrap(err, "cannot collect memory data")
+		}
+		memoryResult, err := common.ConstructResult(queryResultMemory, "Memory", "Bytes", providerPod)
+		if err != nil {
+			return errors.Wrap(err, "cannot construct memory results")
+		}
+		// Update aggregated memory result
+		aggregatedMemoryResult.Average += memoryResult.Average
+		if memoryResult.Peak > aggregatedMemoryResult.Peak {
+			aggregatedMemoryResult.Peak = memoryResult.Peak
+		}
+
+		queryResultCPURate, err := o.CollectData(fmt.Sprintf(`instance:node_cpu_utilisation:rate5m{instance="%s"} * 100`, o.nodeIP))
+		if err != nil {
+			return errors.Wrap(err, "cannot collect cpu data")
+		}
+		cpuRateResult, err := common.ConstructResult(queryResultCPURate, "CPU", "Rate", providerPod)
+		if err != nil {
+			return errors.Wrap(err, "cannot construct cpu results")
+		}
+		// Update aggregated CPU rate result
+		aggregatedCPURateResult.Average += cpuRateResult.Average
+		if cpuRateResult.Peak > aggregatedCPURateResult.Peak {
+			aggregatedCPURateResult.Peak = cpuRateResult.Peak
+		}
+
+		for _, timeToReadinessResult := range timeToReadinessResults {
+			timeToReadinessResult.Print()
+		}
+		memoryResult.Print()
+		cpuRateResult.Print()
 	}
-	qureyResultCPURate, err := o.CollectData(fmt.Sprintf(`instance:node_cpu_utilisation:rate5m{instance="%s"} * 100`, o.nodeIP))
-	if err != nil {
-		return errors.Wrap(err, "cannot collect cpu data")
+
+	if len(o.providerPods) > 1 {
+		log.Infof("\nAggregated Results\n------------------------------------------------------------\n")
+		aggregatedMemoryResult.Print()
+		aggregatedCPURateResult.Print()
 	}
-	cpuRateResult, err := common.ConstructResult(qureyResultCPURate, "CPU", "Rate")
-	if err != nil {
-		return errors.Wrap(err, "cannot construct cpu results")
-	}
-	for _, timeToReadinessResult := range timeToReadinessResults {
-		timeToReadinessResult.Print()
-	}
-	memoryResult.Print()
-	cpuRateResult.Print()
 	return nil
 }
 
