@@ -55,7 +55,7 @@ jobs:
       - name: Bump native provider version in Makefile
         id: bump-mk
         run: |
-          sed -i -E "s/^(export[[:space:]]+TERRAFORM_PROVIDER_VERSION[[:space:]]*:=[[:space:]]*).+/\1$(curl -sL 'https://registry.terraform.io/v1/providers/${{ inputs.provider-source }}' | jq -r .version)/" Makefile
+          sed -i -E "s/^(export[[:space:]]+TERRAFORM_PROVIDER_VERSION[[:space:]]*(:|\?)=[[:space:]]*).+/\1$(curl -sL 'https://registry.terraform.io/v1/providers/${{ inputs.provider-source }}' | jq -r .version)/" Makefile
           echo "bumped=$(git diff --name-only Makefile)" >> $GITHUB_OUTPUT
           echo "version=$(curl -sL 'https://registry.terraform.io/v1/providers/${{ inputs.provider-source }}' | jq -r .version)" >> $GITHUB_OUTPUT
 
