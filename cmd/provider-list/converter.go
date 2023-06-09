@@ -28,7 +28,7 @@ import (
 var SSOPNames = map[string]struct{}{}
 
 // GetSSOPNameFromManagedResource collects the new provider name from MR
-func GetSSOPNameFromManagedResource(u migration.UnstructuredWithMetadata) error { //nolint:unparam // Because of the signature of preprocessor interface
+func GetSSOPNameFromManagedResource(u migration.UnstructuredWithMetadata) error {
 	newProviderName := getProviderAndServiceName(u.Object.GroupVersionKind().Group)
 	if newProviderName != "" {
 		SSOPNames[newProviderName] = struct{}{}
@@ -37,7 +37,7 @@ func GetSSOPNameFromManagedResource(u migration.UnstructuredWithMetadata) error 
 }
 
 // GetSSOPNameFromComposition collects the new provider name from Composition
-func GetSSOPNameFromComposition(u migration.UnstructuredWithMetadata) error { //nolint:deadcode // It will be used in the main of this tool
+func GetSSOPNameFromComposition(u migration.UnstructuredWithMetadata) error {
 	composition, err := migration.ToComposition(u.Object)
 	if err != nil {
 		return errors.Wrap(err, "unstructured object cannot be converted to composition")
