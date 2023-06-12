@@ -127,7 +127,7 @@ jobs:
           if [ $num_packages -gt 10 ]; then
             num_packages=10
           fi
-          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates VERSION=${{ inputs.version }} build.all
+          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound VERSION=${{ inputs.version }} build.all
           echo "num_packages=$num_packages" >> $GITHUB_OUTPUT
         env:
           # We're using docker buildx, which doesn't actually load the images it
@@ -136,4 +136,4 @@ jobs:
 
       - name: Publish Artifacts
         run: |
-          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound-release-candidates XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound-release-candidates BRANCH_NAME=main VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound BRANCH_NAME=main VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
