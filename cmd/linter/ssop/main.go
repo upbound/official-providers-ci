@@ -44,8 +44,9 @@ import (
 )
 
 const (
-	streamFile  = "package.yaml"
-	labelFamily = "pkg.crossplane.io/provider-family"
+	streamFile           = "package.yaml"
+	labelFamily          = "pkg.crossplane.io/provider-family"
+	annotationAuthConfig = "auth.upbound.io/config"
 )
 
 var (
@@ -53,10 +54,11 @@ var (
 )
 
 type ssopLinterConfig struct {
-	crdDir          *string
-	providerName    *string
-	providerVersion *string
-	packageRepoOrg  *string
+	crdDir              *string
+	providerName        *string
+	providerVersion     *string
+	packageRepoOrg      *string
+	checkAuthAnnotation *bool
 }
 
 func main() {
@@ -69,6 +71,7 @@ func main() {
 	config.providerName = familyCmd.Flag("provider-name", `Provider name such as "aws".`).Envar("PROVIDER_NAME").Required().String()
 	config.providerVersion = familyCmd.Flag("provider-version", `Provider family tag to check such as "v0.37.0".`).Envar("PROVIDER_NAME").Required().String()
 	config.packageRepoOrg = familyCmd.Flag("package-repo-org", `Package repo organization with the registry host for the provider family.`).Envar("PACKAGE_REPO_ORG").Default("xpkg.upbound.io/upbound-release-candidates").String()
+	config.checkAuthAnnotation = familyCmd.Flag("check-auth-annotation", `Check Upbound authentication annotation on the ProviderConfig CRD in the provider family's config package.'`).Envar("CHECK_AUTH_ANNOTATION").Default("false").Bool()
 
 	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
 	if cmd == familyCmd.FullCommand() {
@@ -81,6 +84,7 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 	packageURLFormatTagged := packageURLFormat + ":%s"
 	familyConfigPackageName := fmt.Sprintf("provider-family-%s", *config.providerName)
 	familyConfigPackageRef := fmt.Sprintf(packageURLFormat, familyConfigPackageName)
+	providerConfigCRDName := fmt.Sprintf("providerconfigs.%s.upbound.io", *config.providerName)
 
 	entries, err := os.ReadDir(*config.crdDir)
 	if err != nil {
@@ -130,6 +134,16 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 			log.Fatalln("CRD not found: ", e.Name())
 		}
 
+		// if `--check-auth-annotation` command-line option has been specified
+		// and the CRD is the ProviderConfig CRD for the provider, then
+		// check if the ProviderConfig CRD in the package metadata contains
+		// the Upbound authentication annotation
+		if *config.checkAuthAnnotation && crd.Name == providerConfigCRDName {
+			if err := checkAuthAnnotation(metaMap[group], providerConfigCRDName); err != nil {
+				log.Fatalln("Upbound authentication annotation check failed: ", err.Error())
+			}
+		}
+
 		// check if the Provider.pkg has a family label
 		foundMeta := false
 		for _, o := range metaMap[group].GetMeta() {
@@ -165,6 +179,27 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 		}
 	}
 	return nil
+}
+
+func checkAuthAnnotation(xpkg *xpkgparser.Package, providerConfigCRDName string) error {
+	for _, o := range xpkg.GetObjects() {
+		switch crd := o.(type) {
+		case *extv1.CustomResourceDefinition:
+			if crd.Name != providerConfigCRDName {
+				continue
+			}
+			if crd.Annotations == nil {
+				return errors.New("no annotations on the ProviderConfig CRD")
+			}
+			if crd.Annotations[annotationAuthConfig] == "" {
+				return errors.Errorf("ProviderConfig CRD does not have the %q annotation", annotationAuthConfig)
+			}
+			return nil
+		default:
+			continue
+		}
+	}
+	return errors.New("no ProviderConfig CRD in package metadata")
 }
 
 func loadCRD(f string) (*extv1.CustomResourceDefinition, error) {
