@@ -70,7 +70,7 @@ func main() {
 	config.crdDir = familyCmd.Flag("crd-dir", "Directory containing all the generated CRDs for the provider family.").Envar("CRD_DIR").Default("./package/crds").ExistingDir()
 	config.providerName = familyCmd.Flag("provider-name", `Provider name such as "aws".`).Envar("PROVIDER_NAME").Required().String()
 	config.providerVersion = familyCmd.Flag("provider-version", `Provider family tag to check such as "v0.37.0".`).Envar("PROVIDER_NAME").Required().String()
-	config.packageRepoOrg = familyCmd.Flag("package-repo-org", `Package repo organization with the registry host for the provider family.`).Envar("PACKAGE_REPO_ORG").Default("xpkg.upbound.io/upbound-release-candidates").String()
+	config.packageRepoOrg = familyCmd.Flag("package-repo-org", `Package repo organization with the registry host for the provider family.`).Envar("PACKAGE_REPO_ORG").Default("xpkg.upbound.io/upbound").String()
 	config.checkAuthAnnotation = familyCmd.Flag("check-auth-annotation", `Check Upbound authentication annotation on the ProviderConfig CRD in the provider family's config package.'`).Envar("CHECK_AUTH_ANNOTATION").Default("false").Bool()
 
 	cmd := kingpin.MustParse(app.Parse(os.Args[1:]))
