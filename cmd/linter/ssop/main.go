@@ -103,13 +103,12 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 		}
 		log.Println("Checking CRD: ", crd.Name)
 		group := strings.Split(crd.Spec.Group, ".")[0]
+		repoName := fmt.Sprintf("provider-%s-%s", *config.providerName, group)
+		if group == *config.providerName {
+			repoName = familyConfigPackageName
+		}
 
 		if _, ok := metaMap[group]; !ok {
-			repoName := fmt.Sprintf("provider-%s-%s", *config.providerName, group)
-			if group == *config.providerName {
-				repoName = familyConfigPackageName
-			}
-
 			packageURL := fmt.Sprintf(packageURLFormatTagged, repoName, *config.providerVersion)
 			xpkg, err := getPackageMetadata(context.TODO(), packageURL)
 			if err != nil {
@@ -147,6 +146,9 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 					foundLabel = true
 					break
 				}
+			}
+			if foundLabel && repoName == familyConfigPackageName {
+				log.Fatalln("Family label found on family config package: ", familyConfigPackageName)
 			}
 			if !foundLabel {
 				log.Fatalln("Family label not found: ", e.Name())
