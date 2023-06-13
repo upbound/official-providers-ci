@@ -164,7 +164,7 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 			if foundLabel && repoName == familyConfigPackageName {
 				log.Fatalln("Family label found on family config package: ", familyConfigPackageName)
 			}
-			if !foundLabel {
+			if !foundLabel && repoName != familyConfigPackageName {
 				log.Fatalln("Family label not found: ", e.Name())
 			}
 
