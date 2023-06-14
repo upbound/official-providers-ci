@@ -47,6 +47,7 @@ const (
 	streamFile           = "package.yaml"
 	labelFamily          = "pkg.crossplane.io/provider-family"
 	annotationAuthConfig = "auth.upbound.io/config"
+	constraintXPVersion  = ">=v1.12.1-0"
 )
 
 var (
@@ -112,8 +113,8 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 			repoName = familyConfigPackageName
 		}
 
+		packageURL := fmt.Sprintf(packageURLFormatTagged, repoName, *config.providerVersion)
 		if _, ok := metaMap[group]; !ok {
-			packageURL := fmt.Sprintf(packageURLFormatTagged, repoName, *config.providerVersion)
 			xpkg, err := getPackageMetadata(context.TODO(), packageURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get package metadata for provider package: %s", packageURL)
@@ -168,6 +169,10 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 			// check dependency to family config package
 			if group != *config.providerName && (len(m.Spec.DependsOn) != 1 || m.Spec.DependsOn[0].Provider == nil || *m.Spec.DependsOn[0].Provider != familyConfigPackageRef) {
 				log.Fatalln("Missing dependency to family config package: ", e.Name())
+			}
+			// check the version constraint on Crossplane version
+			if m.Spec.Crossplane == nil || m.Spec.Crossplane.Version != constraintXPVersion {
+				log.Fatalf("Package metadata must declare a Crossplane version constraint to %q: %s\n", constraintXPVersion, packageURL)
 			}
 			break
 		}
