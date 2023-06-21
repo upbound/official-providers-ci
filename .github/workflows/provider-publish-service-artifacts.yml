@@ -8,10 +8,6 @@ on:
         default: 'monolith'
         required: false
         type: string
-      version:
-        description: 'Provider version (e.g. v0.1.0)'
-        required: true
-        type: string
       size:
         description: "Number of packages to build and push with each matrix build job"
         default: '30'
@@ -127,7 +123,7 @@ jobs:
           if [ $num_packages -gt 10 ]; then
             num_packages=10
           fi
-          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound VERSION=${{ inputs.version }} build.all
+          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound build.all
           echo "num_packages=$num_packages" >> $GITHUB_OUTPUT
         env:
           # We're using docker buildx, which doesn't actually load the images it
@@ -136,4 +132,4 @@ jobs:
 
       - name: Publish Artifacts
         run: |
-          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound BRANCH_NAME=main VERSION=${{ inputs.version }} CONCURRENCY="${{ inputs.concurrency }}" publish
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound CONCURRENCY="${{ inputs.concurrency }}" publish
