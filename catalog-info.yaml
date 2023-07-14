@@ -1,0 +1,14 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: uptest
+  description: "End to end integration testing for Crossplane Providers and Configurations"
+  links:
+    - url: https://github.com/upbound/uptest/blob/main/README.md
+      title: Uptest readme
+  annotations:
+    github.com/project-slug: upbound/uptest
+spec:
+  type: service
+  lifecycle: production
+  owner: team:extensions
