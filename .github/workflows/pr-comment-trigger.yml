@@ -68,7 +68,7 @@ jobs:
         run: |
           PATHS=$(echo $COMMENT | sed 's/^.*\${{ inputs.trigger-keyword }}="//g' | cut -d '"' -f 1 | sed 's/,/ /g')
           EXAMPLE_LIST=""
-          for P in $PATHS; do EXAMPLE_LIST="${EXAMPLE_LIST},$(find $P -name *.yaml | tr '\n' ',')"; done
+          for P in $PATHS; do EXAMPLE_LIST="${EXAMPLE_LIST},$(find $P -name '*.yaml' | tr '\n' ',')"; done
 
           sudo apt-get -y install coreutils
           COUNT=$(echo ${EXAMPLE_LIST:1} | grep -o ".yaml" | wc -l)
