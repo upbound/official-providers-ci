@@ -19,6 +19,8 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -223,16 +225,40 @@ func prepareGVR(m map[interface{}]interface{}) schema.GroupVersionResource {
 	return pluralGVR
 }
 
-func readYamlFile(fileName string) (map[interface{}]interface{}, error) {
-	yamlFile, err := os.ReadFile(filepath.Clean(fileName))
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot read file")
+func readYamlFile(pathOrURL string) (map[interface{}]interface{}, error) {
+	var content []byte
+	var err error
+
+	if strings.HasPrefix(pathOrURL, "http://") || strings.HasPrefix(pathOrURL, "https://") {
+		// Download the file if it's an HTTP/HTTPS URL
+		resp, err := http.Get(pathOrURL) //nolint:gosec,noctx // This is not a security-sensitive URL.
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot fetch URL")
+		}
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("failed to download; HTTP code: %d", resp.StatusCode)
+		}
+
+		content, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot read content from URL")
+		}
+	} else {
+		// If it's a local path, read the file directly
+		content, err = os.ReadFile(filepath.Clean(pathOrURL))
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot read file")
+		}
 	}
 
 	m := make(map[interface{}]interface{})
-	err = yaml.Unmarshal(yamlFile, m)
+	err = yaml.Unmarshal(content, &m)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot marshal map")
+		return nil, errors.Wrap(err, "cannot unmarshal map")
 	}
 
 	return m, nil

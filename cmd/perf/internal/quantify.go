@@ -56,7 +56,7 @@ func NewCmdQuantify() *cobra.Command {
 		Short: "This tool collects CPU & Memory Utilization and time to readiness of MRs metrics of providers and " +
 			"reports them. When you execute this tool an end-to-end experiment will run.",
 		Example: "provider-scale --mrs ./internal/providerScale/manifests/virtualnetwork.yaml=2 " +
-			"--mrs ./internal/providerScale/manifests/loadbalancer.yaml=2" +
+			"--mrs https:... OR ./internal/providerScale/manifests/loadbalancer.yaml=2" +
 			"--provider-pods crossplane-provider-jet-azure " +
 			"--provider-namespace crossplane-system",
 		RunE: o.Run,
@@ -65,7 +65,7 @@ func NewCmdQuantify() *cobra.Command {
 	o.cmd.Flags().StringSliceVarP(&o.providerPods, "provider-pods", "p", []string{}, "Names of the provider pods. Multiple names can be specified, separated by commas (spaces are ignored).")
 	o.cmd.Flags().StringVar(&o.providerNamespace, "provider-namespace", "crossplane-system",
 		"Namespace name of provider")
-	o.cmd.Flags().StringToIntVar(&o.mrPaths, "mrs", nil, "Managed resource templates that will be deployed")
+	o.cmd.Flags().StringToIntVar(&o.mrPaths, "mrs", nil, "Managed resource templates that will be deployed, provided as local paths or URLs")
 	o.cmd.Flags().StringVar(&o.address, "address", "http://localhost:9090", "Address of Prometheus service")
 	o.cmd.Flags().DurationVar(&o.stepDuration, "step-duration", 1*time.Second, "Step duration between two data points")
 	o.cmd.Flags().BoolVar(&o.clean, "clean", true, "Delete deployed MRs")
