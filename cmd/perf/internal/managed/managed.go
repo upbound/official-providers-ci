@@ -236,7 +236,10 @@ func readYamlFile(pathOrURL string) (map[interface{}]interface{}, error) {
 			return nil, errors.Wrap(err, "cannot fetch URL")
 		}
 		defer func() {
-			_ = resp.Body.Close()
+			err := resp.Body.Close()
+			if err != nil {
+				log.Fatal("cannot close response body")
+			}
 		}()
 
 		if resp.StatusCode != http.StatusOK {
