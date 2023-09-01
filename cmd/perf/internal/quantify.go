@@ -56,7 +56,7 @@ func NewCmdQuantify() *cobra.Command {
 		Short: "This tool collects CPU & Memory Utilization and time to readiness of MRs metrics of providers and " +
 			"reports them. When you execute this tool an end-to-end experiment will run.",
 		Example: "provider-scale --mrs ./internal/providerScale/manifests/virtualnetwork.yaml=2 " +
-			"--mrs https:... OR ./internal/providerScale/manifests/loadbalancer.yaml=2" +
+			"--mrs https:... OR ./internal/providerScale/manifests/loadbalancer.yaml=2 " +
 			"--provider-pods crossplane-provider-jet-azure " +
 			"--provider-namespace crossplane-system",
 		RunE: o.Run,
