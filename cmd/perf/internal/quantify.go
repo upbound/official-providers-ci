@@ -48,6 +48,11 @@ type QuantifyOptions struct {
 	timeout           time.Duration
 }
 
+// Duration returns the time difference from startTime to endTime.
+func (o *QuantifyOptions) Duration() time.Duration {
+	return o.endTime.Sub(o.startTime)
+}
+
 // NewCmdQuantify creates a cobra command
 func NewCmdQuantify() *cobra.Command {
 	o := QuantifyOptions{}
@@ -113,7 +118,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	o.endTime = time.Now()
 	log.Infof("\nExperiment Ended %v\n\n", o.endTime)
 	log.Infof("Results\n------------------------------------------------------------\n")
-	log.Infof("Experiment Duration: %f seconds\n", o.endTime.Sub(o.startTime).Seconds())
+	log.Infof("Experiment Duration: %f seconds\n", o.Duration().Seconds())
 	time.Sleep(60 * time.Second)
 
 	err := o.processPods(timeToReadinessResults)
