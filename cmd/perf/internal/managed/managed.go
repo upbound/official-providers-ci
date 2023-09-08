@@ -120,7 +120,9 @@ func applyResources(mrTemplatePaths map[string]int, applyInterval time.Duration)
 				if err := runApplyCommand(f); err != nil {
 					return nil, err
 				}
-				time.Sleep(applyInterval)
+				if i != count {
+					time.Sleep(applyInterval)
+				}
 				tmpFiles = append(tmpFiles, f.Name())
 			}
 		}
@@ -319,7 +321,7 @@ func runCommand(command string) error {
 	sc := bufio.NewScanner(stdout)
 	sc.Split(bufio.ScanLines)
 	for sc.Scan() {
-		fmt.Println(sc.Text())
+		log.Info(sc.Text())
 	}
 	if err := cmd.Wait(); err != nil {
 		return errors.Wrap(err, "cannot wait for the command exit")
