@@ -45,6 +45,7 @@ type QuantifyOptions struct {
 	stepDuration      time.Duration
 	clean             bool
 	nodeIP            string
+	applyInterval     time.Duration
 	timeout           time.Duration
 }
 
@@ -70,6 +71,7 @@ func NewCmdQuantify() *cobra.Command {
 	o.cmd.Flags().DurationVar(&o.stepDuration, "step-duration", 1*time.Second, "Step duration between two data points")
 	o.cmd.Flags().BoolVar(&o.clean, "clean", true, "Delete deployed MRs")
 	o.cmd.Flags().StringVar(&o.nodeIP, "node", "", "Node IP")
+	o.cmd.Flags().DurationVar(&o.applyInterval, "apply-interval", 0*time.Second, "Elapsed time between applying two manifests to the cluster. Example = 10s. This means that examples will be applied every 10 seconds.")
 	o.cmd.Flags().DurationVar(&o.timeout, "timeout", 120*time.Minute, "Timeout for the experiment")
 
 	if err := o.cmd.MarkFlagRequired("provider-pods"); err != nil {
@@ -90,7 +92,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	results := make(chan []common.Result, 5)
 	errChan := make(chan error, 1)
 	go func() {
-		timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean)
+		timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean, o.applyInterval)
 		if err != nil {
 			errChan <- errors.Wrap(err, "cannot run experiment")
 			return

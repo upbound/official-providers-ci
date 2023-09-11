@@ -49,12 +49,12 @@ import (
 // RunExperiment runs the experiment according to command-line inputs.
 // Firstly the input manifests are deployed. After the all MRs are ready, time to readiness metrics are calculated.
 // Then, by default, all deployed MRs are deleted.
-func RunExperiment(mrTemplatePaths map[string]int, clean bool) ([]common.Result, error) {
+func RunExperiment(mrTemplatePaths map[string]int, clean bool, applyInterval time.Duration) ([]common.Result, error) {
 	var timeToReadinessResults []common.Result
 
 	client := createDynamicClient()
 
-	tmpFileName, err := applyResources(mrTemplatePaths)
+	tmpFiles, err := applyResources(mrTemplatePaths, applyInterval)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot apply resources")
 	}
@@ -70,51 +70,92 @@ func RunExperiment(mrTemplatePaths map[string]int, clean bool) ([]common.Result,
 
 	if clean {
 		log.Info("Deleting resources...")
-		if err := deleteResources(tmpFileName); err != nil {
-			return nil, errors.Wrap(err, "cannot delete resources")
+		for _, tmpFile := range tmpFiles {
+			if err := deleteResources(tmpFile); err != nil {
+				return nil, errors.Wrap(err, "cannot delete resources")
+			}
 		}
 	}
 	return timeToReadinessResults, nil
 }
 
-func applyResources(mrTemplatePaths map[string]int) (string, error) {
-	f, err := os.CreateTemp("/tmp", "")
-	if err != nil {
-		return "", errors.Wrap(err, "cannot create input file")
-	}
-
-	for mrPath, count := range mrTemplatePaths {
-		m, err := readYamlFile(mrPath)
+func applyResources(mrTemplatePaths map[string]int, applyInterval time.Duration) ([]string, error) { //nolint:gocyclo // easy to follow all cases here
+	switch applyInterval { //nolint:exhaustive // not necessary to handle all duration cases
+	case 0 * time.Second:
+		f, err := os.CreateTemp("/tmp", "")
 		if err != nil {
-			return "", errors.Wrap(err, "cannot read template file")
+			return nil, errors.Wrap(err, "cannot create input file")
 		}
-
-		for i := 1; i <= count; i++ {
-			m["metadata"].(map[interface{}]interface{})["name"] = fmt.Sprintf("testperfrun%d", i)
-
-			b, err := yaml.Marshal(m)
+		for mrPath, count := range mrTemplatePaths {
+			m, err := readYamlFile(mrPath)
 			if err != nil {
-				return "", errors.Wrap(err, "cannot marshal object")
+				return nil, errors.Wrap(err, "cannot read template file")
 			}
-
-			if _, err := f.Write(b); err != nil {
-				return "", errors.Wrap(err, "cannot write manifest")
+			for i := 1; i <= count; i++ {
+				if err := createManifest(f, m, i); err != nil {
+					return nil, err
+				}
 			}
-
-			if _, err := f.WriteString("\n---\n\n"); err != nil {
-				return "", errors.Wrap(err, "cannot write yaml separator")
+			if err := runApplyCommand(f); err != nil {
+				return nil, err
 			}
 		}
 
-		if err := f.Close(); err != nil {
-			return "", errors.Wrap(err, "cannot close input file")
+		return []string{f.Name()}, nil
+	default:
+		var tmpFiles []string
+		for mrPath, count := range mrTemplatePaths {
+			m, err := readYamlFile(mrPath)
+			if err != nil {
+				return nil, errors.Wrap(err, "cannot read template file")
+			}
+			for i := 1; i <= count; i++ {
+				f, err := os.CreateTemp("/tmp", "")
+				if err != nil {
+					return nil, errors.Wrap(err, "cannot create input file")
+				}
+				if err := createManifest(f, m, i); err != nil {
+					return nil, err
+				}
+				if err := runApplyCommand(f); err != nil {
+					return nil, err
+				}
+				if i != count {
+					time.Sleep(applyInterval)
+				}
+				tmpFiles = append(tmpFiles, f.Name())
+			}
 		}
-
-		if err := runCommand(fmt.Sprintf(`"kubectl" apply -f %s`, f.Name())); err != nil {
-			return "", errors.Wrap(err, "cannot execute kubectl apply command")
-		}
+		return tmpFiles, nil
 	}
-	return f.Name(), nil
+}
+
+func createManifest(f *os.File, m map[interface{}]interface{}, index int) error {
+	m["metadata"].(map[interface{}]interface{})["name"] = fmt.Sprintf("testperfrun%d", index)
+
+	b, err := yaml.Marshal(m)
+	if err != nil {
+		return errors.Wrap(err, "cannot marshal object")
+	}
+
+	if _, err := f.Write(b); err != nil {
+		return errors.Wrap(err, "cannot write manifest")
+	}
+
+	if _, err := f.WriteString("\n---\n\n"); err != nil {
+		return errors.Wrap(err, "cannot write yaml separator")
+	}
+	return nil
+}
+
+func runApplyCommand(f *os.File) error {
+	if err := f.Close(); err != nil {
+		return errors.Wrap(err, "cannot close input file")
+	}
+	if err := runCommand(fmt.Sprintf(`"kubectl" apply -f %s`, f.Name())); err != nil {
+		return errors.Wrap(err, "cannot execute kubectl apply command")
+	}
+	return nil
 }
 
 func deleteResources(tmpFileName string) error {
@@ -280,7 +321,7 @@ func runCommand(command string) error {
 	sc := bufio.NewScanner(stdout)
 	sc.Split(bufio.ScanLines)
 	for sc.Scan() {
-		fmt.Println(sc.Text())
+		log.Info(sc.Text())
 	}
 	if err := cmd.Wait(); err != nil {
 		return errors.Wrap(err, "cannot wait for the command exit")
