@@ -3,6 +3,10 @@ name: Provider CI
 on:
   workflow_call:
     inputs:
+      large-runner:
+        required: false
+        type: string
+        default: "[e2-standard-8, linux]"
       upjet-based-provider:
         required: false
         type: boolean
@@ -65,7 +69,7 @@ jobs:
         run: |
           make schema-version-diff
   lint:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
@@ -273,7 +277,7 @@ jobs:
         run: make local-deploy
 
   publish-artifacts:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 

@@ -3,6 +3,10 @@ name: Provider Publish Service Artifacts
 on:
   workflow_call:
     inputs:
+      large-runner:
+        required: false
+        type: string
+        default: "[e2-standard-8, linux]"
       subpackages:
         description: 'Subpackages to be built individually (e.g. monolith config ec2)'
         default: 'monolith'
@@ -38,7 +42,7 @@ env:
   
 jobs:
   index:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     outputs:
       indices: ${{ steps.calc.outputs.indices }}
     steps:
@@ -52,7 +56,7 @@ jobs:
         index: ${{ fromJSON(needs.index.outputs.indices) }}
 
     needs: index
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     steps:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@27d0a4f181a40b142cce983c5393082c365d1480 # v1

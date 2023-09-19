@@ -3,6 +3,10 @@ name: Run Uptest
 on:
   workflow_call:
     inputs:
+      large-runner:
+        required: false
+        type: string
+        default: "[e2-standard-8, linux]"
       trigger-keyword:
         description: 'Keyword to trigger the workflow, defaults to /test-examples'
         default: '/test-examples'
@@ -27,7 +31,7 @@ on:
 
 jobs:
   debug:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     steps:
       - name: Debug
         run: |
@@ -40,7 +44,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
             github.event.issue.pull_request &&
             contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     outputs:
       example_list: ${{ steps.get-example-list-name.outputs.example-list }}
       example_hash: ${{ steps.get-example-list-name.outputs.example-hash }}
@@ -97,7 +101,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
       github.event.issue.pull_request &&
       contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: [e2-standard-8, linux]
+    runs-on: ${{ fromJSON(inputs.large-runner) }}
     needs: get-example-list
 
     steps:
