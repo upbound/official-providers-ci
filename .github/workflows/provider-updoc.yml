@@ -2,13 +2,19 @@ name: Updoc
 
 on:
   workflow_call:
+    inputs:
+      providers:
+        description: 'Family provider names for which to publish the docs, e.g., "monolith config". The provider names should be space-delimited.'
+        default: 'monolith'
+        required: false
+        type: string
     secrets:
       UPBOUND_CI_PROD_BUCKET_SA:
         required: true
 
 env:
-  GO_VERSION: '1.19'
-  UPTEST_VERSION: '83bd901'
+  GO_VERSION: "1.19"
+  UPTEST_VERSION: "83bd901"
 
 jobs:
   publish-docs:
@@ -53,10 +59,22 @@ jobs:
           GOOGLE_APPLICATION_CREDENTIALS: sa.json
           PROVIDER_NAME: ${GITHUB_REPOSITORY#*/}
           VER_MAJOR_MINOR: v${GITHUB_REF#"refs/heads/release-"}
+          SUBPACKAGES: ${{ inputs.providers }}
         run: |
           if [[ "${GITHUB_REF##*/}" == release-* ]]; then
-            echo "Publishing Docs for ${{ env.PROVIDER_NAME }}, ${{ env.VER_MAJOR_MINOR }}"
-            go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir=./docs --name=${{ env.PROVIDER_NAME }} --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
+            for s in $SUBPACKAGES; do
+              PROVIDER_PACKAGE_NAME="${{ env.PROVIDER_NAME }}-$s"
+              DOCS_DIR="./docs/family"
+                if [ $s == 'monolith' ]; then
+                  PROVIDER_PACKAGE_NAME="${{ env.PROVIDER_NAME }}"
+                  DOCS_DIR="./docs/monolith"
+                elif [ $s == 'config' ]; then
+                  PROVIDER_PACKAGE_NAME="provider-family-${GITHUB_REPOSITORY#*-}"
+                  DOCS_DIR="./docs/family"
+                fi
+                echo "Publishing Docs for $PROVIDER_PACKAGE_NAME, ${{ env.VER_MAJOR_MINOR }} from $DOCS_DIR"
+                go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir=“${DOCS_DIR}” --name=“${PROVIDER_PACKAGE_NAME}” --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
+            done
           else
             echo "This job can only be run on release branches"
             exit 1
