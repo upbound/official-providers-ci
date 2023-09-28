@@ -90,7 +90,7 @@ kind: TestAssert
 timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
-- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
 `,
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
@@ -101,7 +101,7 @@ commands:
 kind: TestAssert
 timeout: 10
 commands:
-- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
+- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
 `,
 				},
@@ -153,9 +153,9 @@ timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
 - command: /tmp/bucket/pre-assert.sh
-- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Ready --timeout 10s --namespace upbound-system
-- command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Synced --timeout 10s --namespace upbound-system
+- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Ready --timeout 10s --namespace upbound-system
+- script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Synced --timeout 10s --namespace upbound-system
 - command: /tmp/claim/post-assert.sh
 `,
 					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
@@ -170,8 +170,8 @@ commands:
 kind: TestAssert
 timeout: 10
 commands:
-- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
-- command: ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=delete --timeout 10s --namespace upbound-system
+- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
+- script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=delete --timeout 10s --namespace upbound-system
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
 - command: /tmp/teardown.sh
 `,
