@@ -1,0 +1,18 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: {{ .TestCase.Timeout }}
+commands:
+- command: ${KUBECTL} get managed -o yaml
+{{- range $resource := .Resources }}
+{{- if eq $resource.KindGroup "secret." -}}
+  {{continue}}
+{{- end -}}
+{{- range $condition := $resource.Conditions }}
+{{- if not $resource.Namespace }}
+- script: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
+{{- end }}
+{{- end }}
+{{- if not $resource.Namespace }}
+- script: annotation_value_1=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+{{- end }}
+{{- end }}

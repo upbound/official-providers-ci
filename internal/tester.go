@@ -79,6 +79,12 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			YAML:       m.YAML,
 			Timeout:    t.options.DefaultTimeout,
 			Conditions: t.options.DefaultConditions,
+
+			// As default, used the tags field
+			UpdateField:       "tags",
+			UpdateValue:       `{"uptest": "update"}`,
+			UpdateAssertField: "tags.uptest",
+			UpdateAssertValue: "update",
 		}
 
 		var err error
@@ -123,6 +129,22 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			if err != nil {
 				return nil, nil, errors.Wrap(err, "cannot find absolute path for post delete hook")
 			}
+		}
+
+		if v, ok := annotations[config.AnnotationKeyUpdateField]; ok {
+			example.UpdateField = v
+		}
+
+		if v, ok := annotations[config.AnnotationKeyUpdateValue]; ok {
+			example.UpdateValue = v
+		}
+
+		if v, ok := annotations[config.AnnotationKeyUpdateAssertField]; ok {
+			example.UpdateAssertField = v
+		}
+
+		if v, ok := annotations[config.AnnotationKeyUpdateAssertValue]; ok {
+			example.UpdateAssertValue = v
 		}
 
 		examples = append(examples, example)

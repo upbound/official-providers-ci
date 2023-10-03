@@ -28,8 +28,12 @@ import (
 var fileTemplates = map[string]string{
 	"00-apply.yaml":  inputFileTemplate,
 	"00-assert.yaml": assertFileTemplate,
-	"01-delete.yaml": deleteFileTemplate,
-	"01-assert.yaml": assertDeletedFileTemplate,
+	"01-update.yaml": updateFileTemplate,
+	"01-assert.yaml": assertUpdatedFileTemplate,
+	"02-import.yaml": importFileTemplate,
+	"02-assert.yaml": assertImportedFileTemplate,
+	"03-delete.yaml": deleteFileTemplate,
+	"03-assert.yaml": assertDeletedFileTemplate,
 }
 
 // Render renders the specified list of resources as a test case

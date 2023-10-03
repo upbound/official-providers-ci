@@ -2,17 +2,12 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
+- command: ${KUBECTL} get managed -o yaml
 {{- range $resource := .Resources }}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}
 {{- end -}}
-{{- if $resource.Namespace }}
-- script: ${KUBECTL} get --namespace {{ $resource.Namespace }} {{ $resource.KindGroup }}/{{ $resource.Name }} -o yaml && ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
-{{- else }}
-- script: ${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o yaml && ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
+{{- if not $resource.Namespace }}
+- script: ${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider.{{ $resource.UpdateAssertField }}}' | grep -q "^{{ $resource.UpdateAssertValue }}$"
 {{- end }}
-{{- end }}
-- command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
-{{- if .TestCase.TeardownScriptPath }}
-- command: {{ .TestCase.TeardownScriptPath }}
 {{- end }}

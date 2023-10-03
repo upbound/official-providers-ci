@@ -1,0 +1,11 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+{{- range $resource := .Resources }}
+{{- if eq $resource.KindGroup "secret." -}}
+  {{continue}}
+{{- end -}}
+{{- if not $resource.Namespace }}
+- script: '${KUBECTL} patch {{ $resource.KindGroup }}/{{ $resource.Name }} --type=json -p "[{"op": "add", "path": "/spec/forProvider/{{ $resource.UpdateField }}", "value": {{ $resource.UpdateValue }}}]"'
+{{- end }}
+{{- end }}
