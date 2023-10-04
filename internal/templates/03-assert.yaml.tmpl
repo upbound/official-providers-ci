@@ -10,7 +10,7 @@ commands:
 {{- if $resource.Namespace }}
 - script: ${KUBECTL} get --namespace {{ $resource.Namespace }} {{ $resource.KindGroup }}/{{ $resource.Name }} -o yaml --ignore-not-found && ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
 {{- else }}
-- script: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
 {{- end }}
 {{- end }}
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s

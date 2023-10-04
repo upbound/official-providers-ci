@@ -90,19 +90,46 @@ kind: TestAssert
 timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
-- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- command: ${KUBECTL} get managed -o yaml
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
 `,
-					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
+					"01-update.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false --ignore-not-found
 `,
 					"01-assert.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 10
 commands:
-- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
+- command: ${KUBECTL} get managed -o yaml
+`,
+					"02-assert.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 10
+commands:
+- command: ${KUBECTL} get managed -o yaml
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- script: annotation_value_1=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+`,
+					"02-import.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
+- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-external-name=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
+- script: ${KUBECTL} -n upbound-system get pods --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system delete pod
+`,
+					"03-assert.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 10
+commands:
+- command: ${KUBECTL} get managed -o yaml
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
+`,
+					"03-delete.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false --ignore-not-found
 `,
 				},
 			},
@@ -152,28 +179,55 @@ kind: TestAssert
 timeout: 10
 commands:
 - command: ${KUBECTL} annotate managed --all upjet.upbound.io/test=true --overwrite
+- command: ${KUBECTL} get managed -o yaml
 - command: /tmp/bucket/pre-assert.sh
-- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
 - script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Ready --timeout 10s --namespace upbound-system
 - script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=condition=Synced --timeout 10s --namespace upbound-system
 - command: /tmp/claim/post-assert.sh
 `,
-					"01-delete.yaml": `apiVersion: kuttl.dev/v1beta1
+					"01-update.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+`,
+					"01-assert.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 10
+commands:
+- command: ${KUBECTL} get managed -o yaml
+`,
+					"02-assert.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 10
+commands:
+- command: ${KUBECTL} get managed -o yaml
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
+- script: annotation_value_1=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+`,
+					"02-import.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
+- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-external-name=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
+- script: ${KUBECTL} -n upbound-system get pods --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system delete pod
+`,
+					"03-assert.yaml": `apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 10
+commands:
+- command: ${KUBECTL} get managed -o yaml
+- command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
+- script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml --ignore-not-found && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=delete --timeout 10s --namespace upbound-system
+- command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
+- command: /tmp/teardown.sh
+`,
+					"03-delete.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
 - command: ${KUBECTL} delete s3.aws.upbound.io/example-bucket --wait=false --ignore-not-found
 - command: /tmp/bucket/post-delete.sh
 - command: /tmp/claim/pre-delete.sh
 - command: ${KUBECTL} delete cluster.gcp.platformref.upbound.io/test-cluster-claim --wait=false --namespace upbound-system --ignore-not-found
-`,
-					"01-assert.yaml": `apiVersion: kuttl.dev/v1beta1
-kind: TestAssert
-timeout: 10
-commands:
-- script: ${KUBECTL} get s3.aws.upbound.io/example-bucket -o yaml && ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=delete --timeout 10s
-- script: ${KUBECTL} get --namespace upbound-system cluster.gcp.platformref.upbound.io/test-cluster-claim -o yaml && ${KUBECTL} wait cluster.gcp.platformref.upbound.io/test-cluster-claim --for=delete --timeout 10s --namespace upbound-system
-- command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
-- command: /tmp/teardown.sh
 `,
 				},
 			},

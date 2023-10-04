@@ -15,7 +15,7 @@ commands:
 {{- if $resource.Namespace }}
 - script: ${KUBECTL} get --namespace {{ $resource.Namespace }} {{ $resource.KindGroup }}/{{ $resource.Name }} -o yaml && ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s --namespace {{ $resource.Namespace }}
 {{- else }}
-- script: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
 {{- end }}
 {{- end }}
 {{- if $resource.PostAssertScriptPath }}

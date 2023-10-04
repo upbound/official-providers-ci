@@ -16,6 +16,7 @@ package internal
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -79,12 +80,15 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			YAML:       m.YAML,
 			Timeout:    t.options.DefaultTimeout,
 			Conditions: t.options.DefaultConditions,
+		}
 
-			// As default, used the tags field
-			UpdateField:       "tags",
-			UpdateValue:       `{"uptest": "update"}`,
-			UpdateAssertField: "tags.uptest",
-			UpdateAssertValue: "update",
+		if updateParameter := os.Getenv("UPTEST_UPDATE_PARAMETER"); updateParameter != "" {
+			example.UpdateParameter = updateParameter
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(updateParameter), &data); err != nil {
+				return nil, nil, errors.Wrap(err, "cannot unmarshal JSON")
+			}
+			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
 		}
 
 		var err error
@@ -131,20 +135,13 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			}
 		}
 
-		if v, ok := annotations[config.AnnotationKeyUpdateField]; ok {
-			example.UpdateField = v
-		}
-
-		if v, ok := annotations[config.AnnotationKeyUpdateValue]; ok {
-			example.UpdateValue = v
-		}
-
-		if v, ok := annotations[config.AnnotationKeyUpdateAssertField]; ok {
-			example.UpdateAssertField = v
-		}
-
-		if v, ok := annotations[config.AnnotationKeyUpdateAssertValue]; ok {
-			example.UpdateAssertValue = v
+		if v, ok := annotations[config.AnnotationKeyUpdateParameter]; ok {
+			example.UpdateParameter = v
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(v), &data); err != nil {
+				return nil, nil, errors.Wrap(err, "cannot unmarshal JSON")
+			}
+			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
 		}
 
 		examples = append(examples, example)
@@ -171,4 +168,17 @@ func (t *tester) writeKuttlFiles() error {
 	}
 
 	return nil
+}
+
+func convertToJSONPath(data map[string]interface{}, currentPath string) (string, string) {
+	for key, value := range data {
+		newPath := currentPath + "." + key
+		switch v := value.(type) {
+		case map[string]interface{}:
+			return convertToJSONPath(v, newPath)
+		default:
+			return newPath, fmt.Sprintf("%v", v)
+		}
+	}
+	return currentPath, ""
 }

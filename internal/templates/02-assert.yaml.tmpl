@@ -9,7 +9,7 @@ commands:
 {{- end -}}
 {{- range $condition := $resource.Conditions }}
 {{- if not $resource.Namespace }}
-- script: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
+- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=condition={{ $condition }} --timeout 10s
 {{- end }}
 {{- end }}
 {{- if not $resource.Namespace }}

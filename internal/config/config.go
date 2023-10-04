@@ -35,18 +35,9 @@ const (
 	// AnnotationKeyPostDeleteHook defines the path to a post-delete
 	// hook script to be executed after the tested resource is deleted.
 	AnnotationKeyPostDeleteHook = "uptest.upbound.io/post-delete-hook"
-	// AnnotationKeyUpdateField defines the field that will be updated during
-	// update step
-	AnnotationKeyUpdateField = "uptest.upbound.io/update-field"
-	// AnnotationKeyUpdateValue defines the field's value that will be updated
-	// during update step
-	AnnotationKeyUpdateValue = "uptest.upbound.io/update-value"
-	// AnnotationKeyUpdateAssertField defines the field that will be asserted
-	//during the update step
-	AnnotationKeyUpdateAssertField = "uptest.upbound.io/update-assert-field"
-	// AnnotationKeyUpdateAssertValue defines the field's value that will be
-	// asserted during the update step
-	AnnotationKeyUpdateAssertValue = "uptest.upbound.io/update-assert-value"
+	// AnnotationKeyUpdateParameter defines the update parameter that will be
+	// used during the update step
+	AnnotationKeyUpdateParameter = "uptest.upbound.io/update-parameter"
 )
 
 // AutomatedTest represents an automated test of resource example
@@ -93,8 +84,7 @@ type Resource struct {
 	PreDeleteScriptPath  string
 	PostDeleteScriptPath string
 
-	UpdateField       string
-	UpdateValue       string
-	UpdateAssertField string
+	UpdateParameter   string
+	UpdateAssertKey   string
 	UpdateAssertValue string
 }

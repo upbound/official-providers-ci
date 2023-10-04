@@ -6,7 +6,7 @@ commands:
   {{continue}}
 {{- end -}}
 {{- if not $resource.Namespace }}
-- script: ${KUBECTL} --subresource=status patch {{ $resource.KindGroup }}/{{ $resource.Name }} --type=merge -p '{"status":{"conditions":[]}}'
+- command: ${KUBECTL} --subresource=status patch {{ $resource.KindGroup }}/{{ $resource.Name }} --type=merge -p '{"status":{"conditions":[]}}'
 - script: ${KUBECTL} annotate {{ $resource.KindGroup }}/{{ $resource.Name }} uptest-external-name=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
 {{- end }}
 {{- end }}
