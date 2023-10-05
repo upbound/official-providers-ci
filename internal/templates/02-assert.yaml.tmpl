@@ -1,8 +1,9 @@
+# This assert file belongs to the resource import step.
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
-- command: ${KUBECTL} get managed -o yaml
+- script: echo "Dump MR manifests for the import assertion step:"; ${KUBECTL} get managed -o yaml
 {{- range $resource := .Resources }}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}

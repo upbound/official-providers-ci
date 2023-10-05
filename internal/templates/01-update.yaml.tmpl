@@ -1,3 +1,4 @@
+# This file belongs to the resource update step.
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
@@ -9,6 +10,8 @@ commands:
   {{continue}}
 {{- end -}}
 {{- if not $resource.Namespace }}
+{{- if $resource.Root }}
 - command: ${KUBECTL} patch {{ $resource.KindGroup }}/{{ $resource.Name }} --type=merge -p '{"spec":{"forProvider":{{ $resource.UpdateParameter }}}}'
+{{- end }}
 {{- end }}
 {{- end }}

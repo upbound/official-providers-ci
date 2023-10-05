@@ -1,8 +1,9 @@
+# This assert file belongs to the resource update step.
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
-- command: ${KUBECTL} get managed -o yaml
+- script: echo "Dump MR manifests for the update assertion step:"; ${KUBECTL} get managed -o yaml
 {{- range $resource := .Resources }}
 {{- if eq $resource.UpdateParameter "" -}}
   {{continue}}
@@ -11,6 +12,8 @@ commands:
   {{continue}}
 {{- end -}}
 {{- if not $resource.Namespace }}
+{{- if $resource.Root }}
 - script: ${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider{{ $resource.UpdateAssertKey }}}' | grep -q "^{{ $resource.UpdateAssertValue }}$"
+{{- end }}
 {{- end }}
 {{- end }}

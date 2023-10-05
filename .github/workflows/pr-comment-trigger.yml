@@ -18,6 +18,12 @@ on:
         required: false
         type: string
       update-test-parameter:
+        description: 'Input parameter to use during update step. If this field
+        is empty, then the update step will be skipped.
+        The update parameter should be a serialized JSON object and if the JSON
+        object has nested children, then there must be only one leaf.
+        Example: {"tags":{"uptest":"update"}}
+        This parameter will add a tag to the test resource.'
         default: ''
         required: false
         type: string

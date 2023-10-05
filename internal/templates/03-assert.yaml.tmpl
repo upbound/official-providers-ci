@@ -1,14 +1,16 @@
+# This assert file belongs to the resource delete step.
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
-- command: ${KUBECTL} get managed -o yaml
+- script: echo "Dump MR manifests for the delete assertion step:"; ${KUBECTL} get managed -o yaml
+- script: echo "Dump Claim manifests for the delete assertion step:" || ${KUBECTL} get claim --all-namespaces -o yaml
 {{- range $resource := .Resources }}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}
 {{- end -}}
 {{- if $resource.Namespace }}
-- script: ${KUBECTL} get --namespace {{ $resource.Namespace }} {{ $resource.KindGroup }}/{{ $resource.Name }} -o yaml --ignore-not-found && ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
+- script: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
 {{- else }}
 - command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
 {{- end }}
