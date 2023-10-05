@@ -16,6 +16,7 @@ package internal
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -70,7 +71,8 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 
 	for _, m := range t.manifests {
 		obj := m.Object
-		kg := strings.ToLower(obj.GroupVersionKind().Kind + "." + obj.GroupVersionKind().Group)
+		groupVersionKind := obj.GroupVersionKind()
+		kg := strings.ToLower(groupVersionKind.Kind + "." + groupVersionKind.Group)
 
 		example := config.Resource{
 			Name:       obj.GetName(),
@@ -125,6 +127,25 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			}
 		}
 
+		updateParameter, ok := annotations[config.AnnotationKeyUpdateParameter]
+		if !ok {
+			updateParameter = os.Getenv("UPTEST_UPDATE_PARAMETER")
+		}
+		if updateParameter != "" {
+			example.UpdateParameter = updateParameter
+			var data map[string]interface{}
+			if err := json.Unmarshal([]byte(updateParameter), &data); err != nil {
+				return nil, nil, errors.Wrapf(err, "cannot unmarshal JSON object: %s", updateParameter)
+			}
+			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
+		}
+
+		if exampleID, ok := annotations[config.AnnotationKeyExampleID]; ok {
+			if exampleID == strings.ToLower(fmt.Sprintf("%s/%s/%s", strings.Split(groupVersionKind.Group, ".")[0], groupVersionKind.Version, groupVersionKind.Kind)) {
+				example.Root = true
+			}
+		}
+
 		examples = append(examples, example)
 	}
 
@@ -149,4 +170,17 @@ func (t *tester) writeKuttlFiles() error {
 	}
 
 	return nil
+}
+
+func convertToJSONPath(data map[string]interface{}, currentPath string) (string, string) {
+	for key, value := range data {
+		newPath := currentPath + "." + key
+		switch v := value.(type) {
+		case map[string]interface{}:
+			return convertToJSONPath(v, newPath)
+		default:
+			return newPath, fmt.Sprintf("%v", v)
+		}
+	}
+	return currentPath, ""
 }

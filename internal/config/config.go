@@ -35,6 +35,12 @@ const (
 	// AnnotationKeyPostDeleteHook defines the path to a post-delete
 	// hook script to be executed after the tested resource is deleted.
 	AnnotationKeyPostDeleteHook = "uptest.upbound.io/post-delete-hook"
+	// AnnotationKeyUpdateParameter defines the update parameter that will be
+	// used during the update step
+	AnnotationKeyUpdateParameter = "uptest.upbound.io/update-parameter"
+	// AnnotationKeyExampleID is id of example that populated from example
+	// manifest. This information will be used for determining the root resource
+	AnnotationKeyExampleID = "meta.upbound.io/example-id"
 )
 
 // AutomatedTest represents an automated test of resource example
@@ -80,4 +86,10 @@ type Resource struct {
 	PostAssertScriptPath string
 	PreDeleteScriptPath  string
 	PostDeleteScriptPath string
+
+	UpdateParameter   string
+	UpdateAssertKey   string
+	UpdateAssertValue string
+
+	Root bool
 }

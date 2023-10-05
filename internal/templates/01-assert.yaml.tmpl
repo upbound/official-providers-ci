@@ -1,18 +1,19 @@
+# This assert file belongs to the resource update step.
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: {{ .TestCase.Timeout }}
 commands:
+- script: echo "Dump MR manifests for the update assertion step:"; ${KUBECTL} get managed -o yaml
 {{- range $resource := .Resources }}
+{{- if eq $resource.UpdateParameter "" -}}
+  {{continue}}
+{{- end -}}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}
 {{- end -}}
-{{- if $resource.Namespace }}
-- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s --namespace {{ $resource.Namespace }}
-{{- else }}
-- command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
+{{- if not $resource.Namespace }}
+{{- if $resource.Root }}
+- script: ${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider{{ $resource.UpdateAssertKey }}}' | grep -q "^{{ $resource.UpdateAssertValue }}$"
 {{- end }}
 {{- end }}
-- command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
-{{- if .TestCase.TeardownScriptPath }}
-- command: {{ .TestCase.TeardownScriptPath }}
 {{- end }}

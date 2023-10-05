@@ -17,6 +17,16 @@ on:
         default: 'provider'
         required: false
         type: string
+      update-test-parameter:
+        description: 'Input parameter to use during update step. If this field
+        is empty, then the update step will be skipped.
+        The update parameter should be a serialized JSON object and if the JSON
+        object has nested children, then there must be only one leaf.
+        Example: {"tags":{"uptest":"update"}}
+        This parameter will add a tag to the test resource.'
+        default: ''
+        required: false
+        type: string
     secrets:
       UPTEST_CLOUD_CREDENTIALS:
         description: 'Uptest cloud credentials to be passed to the uptest target as environment variable'
@@ -160,6 +170,7 @@ jobs:
           UPTEST_EXAMPLE_LIST: ${{ needs.get-example-list.outputs.example_list }}
           UPTEST_TEST_DIR: ./_output/controlplane-dump
           UPTEST_DATASOURCE_PATH: .work/uptest-datasource.yaml
+          UPTEST_UPDATE_PARAMETER: ${{ inputs.update-test-parameter }}
         run: |
           mkdir -p .work && echo "${{ secrets.UPTEST_DATASOURCE }}" > .work/uptest-datasource.yaml
           make e2e
