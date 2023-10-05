@@ -140,8 +140,8 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
 		}
 
-		if exampleId, ok := annotations["meta.upbound.io/example-id"]; ok {
-			if exampleId == strings.ToLower(fmt.Sprintf("%s/%s/%s", strings.Split(groupVersionKind.Group, ".")[0], groupVersionKind.Version, groupVersionKind.Kind)) {
+		if exampleID, ok := annotations[config.AnnotationKeyExampleID]; ok {
+			if exampleID == strings.ToLower(fmt.Sprintf("%s/%s/%s", strings.Split(groupVersionKind.Group, ".")[0], groupVersionKind.Version, groupVersionKind.Kind)) {
 				example.Root = true
 			}
 		}

@@ -38,9 +38,9 @@ const (
 	// AnnotationKeyUpdateParameter defines the update parameter that will be
 	// used during the update step
 	AnnotationKeyUpdateParameter = "uptest.upbound.io/update-parameter"
-	// AnnotationKeyExampleId is id of example that populated from example
+	// AnnotationKeyExampleID is id of example that populated from example
 	// manifest. This information will be used for determining the root resource
-	AnnotationKeyExampleId = "meta.upbound.io/example-id"
+	AnnotationKeyExampleID = "meta.upbound.io/example-id"
 )
 
 // AutomatedTest represents an automated test of resource example
