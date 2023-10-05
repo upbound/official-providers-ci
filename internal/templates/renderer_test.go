@@ -109,13 +109,13 @@ timeout: 10
 commands:
 - command: ${KUBECTL} get managed -o yaml
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: annotation_value_1=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+- script: new_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
 `,
 					"02-import.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
-- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-external-name=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
+- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
 - script: ${KUBECTL} -n upbound-system get pods --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system delete pod
 `,
 					"03-assert.yaml": `apiVersion: kuttl.dev/v1beta1
@@ -202,13 +202,13 @@ timeout: 10
 commands:
 - command: ${KUBECTL} get managed -o yaml
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: annotation_value_1=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+- script: new_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
 `,
 					"02-import.yaml": `apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
-- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-external-name=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
+- script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
 - script: ${KUBECTL} -n upbound-system get pods --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system delete pod
 `,
 					"03-assert.yaml": `apiVersion: kuttl.dev/v1beta1

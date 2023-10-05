@@ -13,6 +13,6 @@ commands:
 {{- end }}
 {{- end }}
 {{- if not $resource.Namespace }}
-- script: annotation_value_1=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') && annotation_value_2=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.uptest-external-name}') && [ "$annotation_value_1" == "$annotation_value_2" ]
+- script: new_id=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
 {{- end }}
 {{- end }}

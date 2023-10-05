@@ -7,7 +7,7 @@ commands:
 {{- end -}}
 {{- if not $resource.Namespace }}
 - command: ${KUBECTL} --subresource=status patch {{ $resource.KindGroup }}/{{ $resource.Name }} --type=merge -p '{"status":{"conditions":[]}}'
-- script: ${KUBECTL} annotate {{ $resource.KindGroup }}/{{ $resource.Name }} uptest-external-name=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.crossplane\.io/external-name}') --overwrite
+- script: ${KUBECTL} annotate {{ $resource.KindGroup }}/{{ $resource.Name }} uptest-old-id=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider.id}') --overwrite
 {{- end }}
 {{- end }}
 - script: ${KUBECTL} -n upbound-system get pods --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system delete pod
