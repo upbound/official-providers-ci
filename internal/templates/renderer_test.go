@@ -114,7 +114,7 @@ timeout: 10
 commands:
 - script: echo "Dump MR manifests for the import assertion step:"; ${KUBECTL} get managed -o yaml
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: new_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
+- script: new_id="$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}')" && old_id="$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}')" && [ "$new_id" = "$old_id" ]
 `,
 					"02-import.yaml": `# This file belongs to the resource import step.
 apiVersion: kuttl.dev/v1beta1
@@ -221,7 +221,7 @@ timeout: 10
 commands:
 - script: echo "Dump MR manifests for the import assertion step:"; ${KUBECTL} get managed -o yaml
 - command: ${KUBECTL} wait s3.aws.upbound.io/example-bucket --for=condition=Test --timeout 10s
-- script: new_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
+- script: new_id="$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}')" && old_id="$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.metadata.annotations.uptest-old-id}')" && [ "$new_id" = "$old_id" ]
 `,
 					"02-import.yaml": `# This file belongs to the resource import step.
 apiVersion: kuttl.dev/v1beta1
