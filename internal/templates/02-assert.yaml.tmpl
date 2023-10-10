@@ -14,6 +14,6 @@ commands:
 {{- end }}
 {{- end }}
 {{- if not $resource.Namespace }}
-- script: new_id=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider.id}') && old_id=$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.uptest-old-id}') && [ "$new_id" == "$old_id" ]
+- script: new_id="$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.status.atProvider.id}')" && old_id="$(${KUBECTL} get {{ $resource.KindGroup }}/{{ $resource.Name }} -o=jsonpath='{.metadata.annotations.uptest-old-id}')" && [ "$new_id" = "$old_id" ]
 {{- end }}
 {{- end }}
