@@ -8,6 +8,11 @@ on:
         default: 'monolith'
         required: false
         type: string
+      regorg:
+        description: 'Package registry and organization where the packages will be pushed or (e.g. xpkg.upbound.io/upbound)'
+        default: 'xpkg.upbound.io/upbound'
+        required: false
+        type: string
       size:
         description: "Number of packages to build and push with each matrix build job"
         default: '30'
@@ -16,6 +21,16 @@ on:
       concurrency:
         description: "Number of parallel package builds in each matrix job"
         default: '1'
+        required: false
+        type: string
+      branch_name:
+        description: "Branch name to use while publishing the packages"
+        default: ''
+        required: false
+        type: string
+      version:
+        description: "Version string to use while publishing the packages"
+        default: ''
         required: false
         type: string
     secrets:
@@ -123,7 +138,7 @@ jobs:
           if [ $num_packages -gt 10 ]; then
             num_packages=10
           fi
-          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound build.all
+          make -j $num_packages SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS="${{ inputs.regorg }}" XPKG_REG_ORGS_NO_PROMOTE="${{ inputs.regorg }}" ${{ inputs.branch_name != '' && format('BRANCH_NAME={0}', inputs.branch_name) || '' }} ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} build.all
           echo "num_packages=$num_packages" >> $GITHUB_OUTPUT
         env:
           # We're using docker buildx, which doesn't actually load the images it
@@ -132,4 +147,4 @@ jobs:
 
       - name: Publish Artifacts
         run: |
-          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS=xpkg.upbound.io/upbound XPKG_REG_ORGS_NO_PROMOTE=xpkg.upbound.io/upbound CONCURRENCY="${{ inputs.concurrency }}" publish
+          make -j ${{ steps.build_artifacts.outputs.num_packages }} SUBPACKAGES="${{ steps.packages.outputs.target }}" XPKG_REG_ORGS="${{ inputs.regorg }}" XPKG_REG_ORGS_NO_PROMOTE="${{ inputs.regorg }}" CONCURRENCY="${{ inputs.concurrency }}" ${{ inputs.branch_name != '' && format('BRANCH_NAME={0}', inputs.branch_name) || '' }} ${{ inputs.version != '' && format('VERSION={0}', inputs.version) || '' }} publish
