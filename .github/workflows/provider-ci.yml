@@ -69,7 +69,7 @@ jobs:
         run: |
           make schema-version-diff
   lint:
-    runs-on: e2-standard-8-20.04
+    runs-on: Ubuntu-Jumbo-Runner
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
 
