@@ -38,7 +38,7 @@ var fileTemplates = map[string]string{
 
 // Render renders the specified list of resources as a test case
 // with the specified configuration.
-func Render(tc *config.TestCase, resources []config.Resource) (map[string]string, error) {
+func Render(tc *config.TestCase, resources []config.Resource, skipDelete bool) (map[string]string, error) {
 	data := struct {
 		Resources []config.Resource
 		TestCase  config.TestCase
@@ -49,6 +49,11 @@ func Render(tc *config.TestCase, resources []config.Resource) (map[string]string
 
 	res := make(map[string]string, len(fileTemplates))
 	for name, tmpl := range fileTemplates {
+		// Skip templates with names starting with "03-" if skipDelete is true
+		if skipDelete && strings.HasPrefix(name, "03-") {
+			continue
+		}
+
 		t, err := template.New(name).Parse(tmpl)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot parse template %q", name)

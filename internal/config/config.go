@@ -56,6 +56,8 @@ type AutomatedTest struct {
 
 	DefaultTimeout    int
 	DefaultConditions []string
+
+	SkipDelete bool
 }
 
 // Manifest represents a resource loaded from an example resource manifest file.
