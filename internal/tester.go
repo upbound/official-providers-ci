@@ -158,7 +158,7 @@ func (t *tester) writeKuttlFiles() error {
 		return errors.Wrap(err, "cannot build examples config")
 	}
 
-	files, err := templates.Render(tc, examples)
+	files, err := templates.Render(tc, examples, t.options.SkipDelete)
 	if err != nil {
 		return errors.Wrap(err, "cannot render kuttl templates")
 	}
