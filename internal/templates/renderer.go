@@ -49,6 +49,14 @@ func Render(tc *config.TestCase, resources []config.Resource, skipDelete bool) (
 
 	res := make(map[string]string, len(fileTemplates))
 	for name, tmpl := range fileTemplates {
+		// Skip templates with names starting with "01-" if skipUpdate is true
+		if tc.SkipUpdate && strings.HasPrefix(name, "01-") {
+			continue
+		}
+		// Skip templates with names starting with "02-" if skipImport is true
+		if tc.SkipImport && strings.HasPrefix(name, "02-") {
+			continue
+		}
 		// Skip templates with names starting with "03-" if skipDelete is true
 		if skipDelete && strings.HasPrefix(name, "03-") {
 			continue

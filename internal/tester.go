@@ -138,10 +138,16 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 				return nil, nil, errors.Wrapf(err, "cannot unmarshal JSON object: %s", updateParameter)
 			}
 			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
+		} else {
+			tc.SkipUpdate = true
 		}
 
 		if exampleID, ok := annotations[config.AnnotationKeyExampleID]; ok {
 			if exampleID == strings.ToLower(fmt.Sprintf("%s/%s/%s", strings.Split(groupVersionKind.Group, ".")[0], groupVersionKind.Version, groupVersionKind.Kind)) {
+				disableImport, ok := annotations[config.AnnotationKeyDisableImport]
+				if ok && disableImport == "true" {
+					tc.SkipImport = true
+				}
 				example.Root = true
 			}
 		}

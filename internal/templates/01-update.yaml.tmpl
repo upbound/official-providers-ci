@@ -3,9 +3,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
 {{- range $resource := .Resources }}
-{{- if eq $resource.UpdateParameter "" -}}
-  {{continue}}
-{{- end -}}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}
 {{- end -}}

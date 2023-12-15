@@ -5,9 +5,6 @@ timeout: {{ .TestCase.Timeout }}
 commands:
 - script: echo "Dump MR manifests for the update assertion step:"; ${KUBECTL} get managed -o yaml
 {{- range $resource := .Resources }}
-{{- if eq $resource.UpdateParameter "" -}}
-  {{continue}}
-{{- end -}}
 {{- if eq $resource.KindGroup "secret." -}}
   {{continue}}
 {{- end -}}
