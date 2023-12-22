@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -38,10 +39,17 @@ import (
 )
 
 var (
-	charset = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	charset                  = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	charsetLowercaseLetters  = []rune("abcdefghijklmnopqrstuvwxyz")
+	charsetUppercaseLetters  = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	charsetLetters           = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	charsetAlphanumeric      = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	charsetAlphanumericLower = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 
 	dataSourceRegex = regexp.MustCompile(`\${data\.(.*?)}`)
 	randomStrRegex  = regexp.MustCompile(`\${Rand\.(.*?)}`)
+
+	defaultRandomStrLength = 8
 
 	caseDirectory = "case"
 )
@@ -153,15 +161,42 @@ func (p *preparer) injectValues(manifestData string, dataSourceMap map[string]st
 	// Inject random strings
 	randomKeys := randomStrRegex.FindAllStringSubmatch(manifestData, -1)
 	for _, randomKey := range randomKeys {
-		switch randomKey[1] {
+		randKind, randStrLength := parseRandomKey(randomKey[1])
+		switch randKind {
 		case "RFC1123Subdomain":
 			r := generateRFC1123SubdomainCompatibleString()
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
+		case "Alphanumeric":
+			r := generateAlphanumericString(randStrLength)
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
+		case "AlphanumericLowercase":
+			r := generateAlphanumericLowercaseString(randStrLength)
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
+		case "LettersLowercase":
+			r := generateLowercaseLetterString(randStrLength)
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
+		case "LettersUppercase":
+			r := generateUppercaseLetterString(randStrLength)
+			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
+		case "Letters":
+			r := generateLetterString(randStrLength)
 			manifestData = strings.Replace(manifestData, randomKey[0], r, 1)
 		default:
 			continue
 		}
 	}
 	return manifestData
+}
+
+func parseRandomKey(randomKey string) (string, int) {
+	randStrLength := defaultRandomStrLength
+	randKind, randLength, found := strings.Cut(randomKey, "#")
+	if found {
+		if rsr, err := strconv.Atoi(randLength); err == nil && rsr > 0 {
+			randStrLength = rsr
+		}
+	}
+	return randKind, randStrLength
 }
 
 func generateRFC1123SubdomainCompatibleString() string {
@@ -171,4 +206,35 @@ func generateRFC1123SubdomainCompatibleString() string {
 		s[i] = charset[rand.Intn(len(charset))] //nolint:gosec // no need for crypto/rand here
 	}
 	return fmt.Sprintf("op-%s", string(s))
+}
+
+func generateStringWithCharset(charset []rune, length int) string {
+	if length < 1 {
+		length = defaultRandomStrLength
+	}
+	s := make([]rune, length)
+	for i := range s {
+		s[i] = charset[rand.Intn(len(charset))] //nolint:gosec // no need for crypto/rand here
+	}
+	return string(s)
+}
+
+func generateAlphanumericString(length int) string {
+	return generateStringWithCharset(charsetAlphanumeric, length)
+}
+
+func generateAlphanumericLowercaseString(length int) string {
+	return generateStringWithCharset(charsetAlphanumericLower, length)
+}
+
+func generateLowercaseLetterString(length int) string {
+	return generateStringWithCharset(charsetLowercaseLetters, length)
+}
+
+func generateUppercaseLetterString(length int) string {
+	return generateStringWithCharset(charsetUppercaseLetters, length)
+}
+
+func generateLetterString(length int) string {
+	return generateStringWithCharset(charsetLetters, length)
 }
