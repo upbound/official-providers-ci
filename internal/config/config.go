@@ -98,5 +98,7 @@ type Resource struct {
 	UpdateAssertKey   string
 	UpdateAssertValue string
 
+	SkipImport bool
+
 	Root bool
 }

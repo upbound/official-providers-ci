@@ -141,14 +141,18 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 		} else {
 			tc.SkipUpdate = true
 		}
+		disableImport, ok := annotations[config.AnnotationKeyDisableImport]
+		if ok && disableImport == "true" {
+			example.SkipImport = true
+		}
 
 		if exampleID, ok := annotations[config.AnnotationKeyExampleID]; ok {
 			if exampleID == strings.ToLower(fmt.Sprintf("%s/%s/%s", strings.Split(groupVersionKind.Group, ".")[0], groupVersionKind.Version, groupVersionKind.Kind)) {
-				disableImport, ok := annotations[config.AnnotationKeyDisableImport]
-				if ok && disableImport == "true" {
+				if disableImport == "true" {
 					tc.SkipImport = true
 				}
 				example.Root = true
+
 			}
 		}
 
