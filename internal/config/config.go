@@ -58,6 +58,8 @@ type AutomatedTest struct {
 	DefaultConditions []string
 
 	SkipDelete bool
+
+	OnlyCleanUptestResources bool
 }
 
 // Manifest represents a resource loaded from an example resource manifest file.
@@ -72,6 +74,8 @@ type TestCase struct {
 	Timeout            int
 	SetupScriptPath    string
 	TeardownScriptPath string
+
+	OnlyCleanUptestResources bool
 }
 
 // Resource represents a Kubernetes object to be tested and asserted

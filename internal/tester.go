@@ -63,9 +63,10 @@ func (t *tester) executeTests() error {
 
 func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { //nolint:gocyclo // TODO: can we break this?
 	tc := &config.TestCase{
-		Timeout:            t.options.DefaultTimeout,
-		SetupScriptPath:    t.options.SetupScriptPath,
-		TeardownScriptPath: t.options.TeardownScriptPath,
+		Timeout:                  t.options.DefaultTimeout,
+		SetupScriptPath:          t.options.SetupScriptPath,
+		TeardownScriptPath:       t.options.TeardownScriptPath,
+		OnlyCleanUptestResources: t.options.OnlyCleanUptestResources,
 	}
 	examples := make([]config.Resource, 0, len(t.manifests))
 
