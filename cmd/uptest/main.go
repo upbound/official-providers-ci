@@ -54,8 +54,9 @@ var (
 	defaultConditions = e2e.Flag("default-conditions", "Comma separated list of default conditions to wait for a successful test.\n"+
 		"Conditions could be overridden per resource using \"uptest.upbound.io/conditions\" annotation.").Default("Ready").String()
 
-	skipDelete = e2e.Flag("skip-delete", "Skip the delete step of the test.").Default("false").Bool()
-	testDir    = e2e.Flag("test-directory", "Directory where kuttl test case will be generated and executed.").Envar("UPTEST_TEST_DIR").Default(filepath.Join(os.TempDir(), "uptest-e2e")).String()
+	skipDelete               = e2e.Flag("skip-delete", "Skip the delete step of the test.").Default("false").Bool()
+	testDir                  = e2e.Flag("test-directory", "Directory where kuttl test case will be generated and executed.").Envar("UPTEST_TEST_DIR").Default(filepath.Join(os.TempDir(), "uptest-e2e")).String()
+	onlyCleanUptestResources = e2e.Flag("only-clean-uptest-resources", "While deletion step, only clean resources that were created by uptest").Default("false").Bool()
 )
 
 var (
@@ -115,14 +116,15 @@ func e2eTests() {
 		}
 	}
 	o := &config.AutomatedTest{
-		ManifestPaths:      examplePaths,
-		DataSourcePath:     *dataSourcePath,
-		SetupScriptPath:    setupPath,
-		TeardownScriptPath: teardownPath,
-		DefaultConditions:  strings.Split(*defaultConditions, ","),
-		DefaultTimeout:     *defaultTimeout,
-		Directory:          *testDir,
-		SkipDelete:         *skipDelete,
+		ManifestPaths:            examplePaths,
+		DataSourcePath:           *dataSourcePath,
+		SetupScriptPath:          setupPath,
+		TeardownScriptPath:       teardownPath,
+		DefaultConditions:        strings.Split(*defaultConditions, ","),
+		DefaultTimeout:           *defaultTimeout,
+		Directory:                *testDir,
+		SkipDelete:               *skipDelete,
+		OnlyCleanUptestResources: *onlyCleanUptestResources,
 	}
 
 	kingpin.FatalIfError(internal.RunTest(o), "cannot run e2e tests successfully")
