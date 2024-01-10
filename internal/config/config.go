@@ -41,6 +41,9 @@ const (
 	// AnnotationKeyExampleID is id of example that populated from example
 	// manifest. This information will be used for determining the root resource
 	AnnotationKeyExampleID = "meta.upbound.io/example-id"
+	// AnnotationKeyDisableImport determines whether the Import
+	// step of the resource to be tested will be executed or not.
+	AnnotationKeyDisableImport = "uptest.upbound.io/disable-import"
 )
 
 // AutomatedTest represents an automated test of resource example
@@ -74,6 +77,8 @@ type TestCase struct {
 	Timeout            int
 	SetupScriptPath    string
 	TeardownScriptPath string
+	SkipUpdate         bool
+	SkipImport         bool
 
 	OnlyCleanUptestResources bool
 }
@@ -96,6 +101,8 @@ type Resource struct {
 	UpdateParameter   string
 	UpdateAssertKey   string
 	UpdateAssertValue string
+
+	SkipImport bool
 
 	Root bool
 }
