@@ -120,12 +120,12 @@ commands:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=0
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=0
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=0
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=0
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
 - script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=1
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=1
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=1
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=1
 `,
 
 					"03-assert.yaml": `# This assert file belongs to the resource delete step.
@@ -227,12 +227,12 @@ commands:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=0
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=0
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=0
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=0
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
 - script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=1
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=1
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=1
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=1
 `,
 					"03-assert.yaml": `# This assert file belongs to the resource delete step.
 apiVersion: kuttl.dev/v1beta1
@@ -337,12 +337,12 @@ commands:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=0
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=0
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=0
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=0
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
 - script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=1
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=1
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=1
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=1
 `,
 				},
 			},
@@ -517,12 +517,12 @@ commands:
 apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=0
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=0
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=0
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=0
 - command: ${KUBECTL} --subresource=status patch s3.aws.upbound.io/example-bucket --type=merge -p '{"status":{"conditions":[]}}'
 - script: ${KUBECTL} annotate s3.aws.upbound.io/example-bucket uptest-old-id=$(${KUBECTL} get s3.aws.upbound.io/example-bucket -o=jsonpath='{.status.atProvider.id}') --overwrite
-- command: ${KUBECTL} scale deployment crossplane -n upbound-system --replicas=1
-- script: ${KUBECTL} -n upbound-system get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n upbound-system scale deploy --replicas=1
+- command: ${KUBECTL} scale deployment crossplane -n ${CROSSPLANE_NAMESPACE} --replicas=1
+- script: ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} get deploy --no-headers -o custom-columns=":metadata.name" | grep "provider-" | xargs ${KUBECTL} -n ${CROSSPLANE_NAMESPACE} scale deploy --replicas=1
 `,
 				},
 			},

@@ -15,7 +15,9 @@ commands:
 - command: ${KUBECTL} wait {{ $resource.KindGroup }}/{{ $resource.Name }} --for=delete --timeout 10s
 {{- end }}
 {{- end }}
+{{- if not .TestCase.OnlyCleanUptestResources }}
 - command: ${KUBECTL} wait managed --all --for=delete --timeout 10s
+{{- end }}
 {{- if .TestCase.TeardownScriptPath }}
 - command: {{ .TestCase.TeardownScriptPath }}
 {{- end }}
