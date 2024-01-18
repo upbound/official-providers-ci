@@ -77,8 +77,12 @@ type preparer struct {
 	testDirectory  string
 }
 
+//nolint:gocyclo // This function is not complex, gocyclo threshold was reached due to the error handling.
 func (p *preparer) prepareManifests() ([]config.Manifest, error) {
 	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
+	if err := os.RemoveAll(caseDirectory); err != nil {
+		return nil, errors.Wrapf(err, "cannot clean directory %s", caseDirectory)
+	}
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
