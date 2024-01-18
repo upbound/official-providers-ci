@@ -77,6 +77,7 @@ type preparer struct {
 	testDirectory  string
 }
 
+//nolint:gocyclo // This function is not complex, gocyclo threshold was reached due to the error handling.
 func (p *preparer) prepareManifests() ([]config.Manifest, error) {
 	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
 	if err := os.RemoveAll(caseDirectory); err != nil {
