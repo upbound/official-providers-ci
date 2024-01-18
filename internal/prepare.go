@@ -79,6 +79,9 @@ type preparer struct {
 
 func (p *preparer) prepareManifests() ([]config.Manifest, error) {
 	caseDirectory := filepath.Join(p.testDirectory, caseDirectory)
+	if err := os.RemoveAll(caseDirectory); err != nil {
+		return nil, errors.Wrapf(err, "cannot clean directory %s", caseDirectory)
+	}
 	if err := os.MkdirAll(caseDirectory, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "cannot create directory %s", caseDirectory)
 	}
