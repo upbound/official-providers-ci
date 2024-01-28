@@ -12,6 +12,11 @@ on:
         default: '1.20'
         required: false
         type: string
+      golangci-version:
+        description: 'The version string to be used with the golangci-lint action'
+        default: 'v1.55.2'
+        required: false
+        type: string
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -20,7 +25,6 @@ on:
 
 env:
   # Common versions
-  GOLANGCI_VERSION: 'v1.54.2'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
 
   # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
@@ -112,7 +116,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3
         with:
-          version: ${{ env.GOLANGCI_VERSION }}
+          version: ${{ inputs.golangci-version }}
           args: --timeout=30m
 
   check-diff:
