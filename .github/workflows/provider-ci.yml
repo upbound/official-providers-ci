@@ -118,6 +118,12 @@ jobs:
         with:
           version: ${{ inputs.golangci-version }}
           args: --timeout=30m
+          # we manage the mod cache with the same key across different jobs.
+          # no need for the lint action to manage its own Go mod cache.
+          skip-pkg-cache: true
+          # we manage the build cache with the same key across different jobs.
+          # no need for the lint action to manage its own Go build cache.
+          skip-build-cache: true
 
   check-diff:
     runs-on: ubuntu-22.04
