@@ -139,8 +139,6 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 				return nil, nil, errors.Wrapf(err, "cannot unmarshal JSON object: %s", updateParameter)
 			}
 			example.UpdateAssertKey, example.UpdateAssertValue = convertToJSONPath(data, "")
-		} else {
-			tc.SkipUpdate = true
 		}
 		disableImport, ok := annotations[config.AnnotationKeyDisableImport]
 		if ok && disableImport == "true" {
@@ -152,8 +150,10 @@ func (t *tester) prepareConfig() (*config.TestCase, []config.Resource, error) { 
 				if disableImport == "true" {
 					tc.SkipImport = true
 				}
+				if updateParameter == "" {
+					tc.SkipUpdate = true
+				}
 				example.Root = true
-
 			}
 		}
 
