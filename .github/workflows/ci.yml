@@ -18,6 +18,7 @@ env:
   # step 'if env.XXX' != ""', so we copy these to succinctly test whether
   # credentials have been provided before trying to run steps that need them.
   UPBOUND_MARKETPLACE_PUSH_ROBOT_USR: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
 jobs:
   detect-noop:
     runs-on: ubuntu-22.04
@@ -211,3 +212,19 @@ jobs:
         with:
           name: output
           path: _output/**
+
+      - name: Publish Artifacts to S3
+        run: make -j2 publish BRANCH_NAME=${GITHUB_REF##*/}
+        if: env.AWS_ACCESS_KEY_ID != ''
+        env:
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Promote Artifacts in S3
+        if: github.ref == 'refs/heads/main' && env.AWS_ACCESS_KEY_ID != ''
+        run: make -j2 promote
+        env:
+          BRANCH_NAME: main
+          CHANNEL: main
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1

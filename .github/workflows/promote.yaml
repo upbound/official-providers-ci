@@ -1,0 +1,48 @@
+name: Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v0.1.0)'
+        required: true
+      channel:
+        description: 'Release channel'
+        required: true
+        default: 'alpha'
+
+env:
+  # Common versions
+  GO_VERSION: '1.19'
+
+  # Common users. We can't run a step 'if secrets.XXX != ""' but we can run
+  # a step 'if env.XXX' != ""', so we copy these to succinctly test whether
+  # credentials have been provided before trying to run steps that need them.
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+
+jobs:
+  promote-artifacts:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
+        with:
+          submodules: true
+
+      - name: Setup Go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Fetch History
+        run: git fetch --prune --unshallow
+
+      - name: Promote Artifacts in S3
+        if: env.AWS_ACCESS_KEY_ID != ''
+        run: make -j2 promote BRANCH_NAME=${GITHUB_REF##*/}
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+          CHANNEL: ${{ github.event.inputs.channel }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
