@@ -57,7 +57,7 @@ env:
   
 jobs:
   index:
-    runs-on: [e2-standard-8, linux]
+    runs-on: ubuntu-22.04
     outputs:
       indices: ${{ steps.calc.outputs.indices }}
     steps:
@@ -71,7 +71,7 @@ jobs:
         index: ${{ fromJSON(needs.index.outputs.indices) }}
 
     needs: index
-    runs-on: [e2-standard-8, linux]
+    runs-on: ubuntu-22.04
     steps:
       - name: Setup QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
