@@ -48,8 +48,8 @@ var (
 func addOrUpdateBuildTag(parent, regex, tagFormat, mode string, deleteTags bool) error {
 	re, err := regexp.Compile(regex)
 	kingpin.FatalIfError(err, "Failed to compile the given regular expression: %s", regex)
-
-	return filepath.Walk(parent, func(path string, info os.FileInfo, err error) error {
+	matched := false
+	err = filepath.Walk(parent, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -72,6 +72,7 @@ func addOrUpdateBuildTag(parent, regex, tagFormat, mode string, deleteTags bool)
 			if len(matches) == 0 {
 				return nil
 			}
+			matched = true
 			args := make([]any, len(matches)-1)
 			for i, a := range matches[1:] {
 				args[i] = a
@@ -84,6 +85,13 @@ func addOrUpdateBuildTag(parent, regex, tagFormat, mode string, deleteTags bool)
 		}
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+	if matched {
+		return nil
+	}
+	return errors.Errorf("no Go source files under %s matched the regular expression %q", parent, regex)
 }
 
 // updateFileWithBuildTag reads a Go file and updates or inserts the specified build tag.
