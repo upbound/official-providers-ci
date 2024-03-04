@@ -55,19 +55,10 @@ func addOrUpdateBuildTag(parent, regex, tagFormat, mode string, deleteTags bool)
 		}
 
 		if !info.IsDir() {
-			var matchString string
-			switch mode {
-			case "file":
-				// regex is matched against the filename
-				matchString = filepath.Base(path)
-			case "dir":
-				// regex is matched against the relative path
-				matchString, err = filepath.Rel(parent, path)
-				if err != nil {
-					return errors.Wrapf(err, "failed to determine the relative path of %s wrt to %s", path, parent)
-				}
+			matchString, err := getMatchString(parent, path, mode)
+			if err != nil {
+				return err
 			}
-
 			matches := re.FindStringSubmatch(matchString)
 			if len(matches) == 0 {
 				return nil
@@ -94,9 +85,23 @@ func addOrUpdateBuildTag(parent, regex, tagFormat, mode string, deleteTags bool)
 	return errors.Errorf("no Go source files under %s matched the regular expression %q", parent, regex)
 }
 
+func getMatchString(parent, path, mode string) (string, error) {
+	switch mode {
+	case "file":
+		// regex is matched against the filename
+		return filepath.Base(path), nil
+	case "dir":
+		// regex is matched against the relative path
+		matchString, err := filepath.Rel(parent, path)
+		return matchString, errors.Wrapf(err, "failed to determine the relative path of %s wrt to %s", path, parent)
+	default:
+		return "", errors.Errorf("unknown match mode %q", mode)
+	}
+}
+
 // updateFileWithBuildTag reads a Go file and updates or inserts the specified build tag.
 func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
-	content, err := os.ReadFile(filePath)
+	content, err := os.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		return errors.Wrapf(err, "failed to read the source file at path %s", filePath)
 	}
@@ -124,7 +129,7 @@ func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
 		updatedLines = append(addedLines[:trimIndex], updatedLines...)
 	}
 	// Write the updated content back to the file
-	return errors.Wrapf(os.WriteFile(filePath, []byte(strings.Join(updatedLines, "\n")), 0644), "failed to write the source file at path %s", filePath)
+	return errors.Wrapf(os.WriteFile(filePath, []byte(strings.Join(updatedLines, "\n")), 0600), "failed to write the source file at path %s", filePath)
 }
 
 func main() {
