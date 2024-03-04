@@ -17,7 +17,7 @@ S3_BUCKET ?= upbound.official-providers-ci.releases
 
 # ====================================================================================
 # Setup Go
-GO_REQUIRED_VERSION = 1.19
+GO_REQUIRED_VERSION = 1.21
 # GOLANGCILINT_VERSION is inherited from build submodule by default.
 # Uncomment below if you need to override the version.
 # GOLANGCILINT_VERSION ?= 1.54.0
