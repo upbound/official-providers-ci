@@ -112,18 +112,20 @@ func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
 	}
 	var updatedLines []string
 	index := -1
+	tagExists := false
 	if strings.HasPrefix(lines[0], "//go:build") {
+		tagExists = true
 		index++
 	}
 	emptyLineFollows := len(lines) > 1 && strings.TrimSpace(lines[1]) == ""
-	if deleteTag && emptyLineFollows {
+	if deleteTag && emptyLineFollows && tagExists {
 		index++
 	}
 	updatedLines = lines[index+1:]
 	if !deleteTag {
 		addedLines := [2]string{buildTag}
 		trimIndex := 2
-		if emptyLineFollows {
+		if emptyLineFollows && tagExists {
 			trimIndex = 1
 		}
 		updatedLines = append(addedLines[:trimIndex], updatedLines...)
