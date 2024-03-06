@@ -4,6 +4,7 @@ on:
   workflow_call:
     inputs:
       upjet-based-provider:
+        description: 'Should be set to true if the repo running the workflow is an upjet-based provider repo'
         required: false
         type: boolean
         default: true
@@ -22,6 +23,11 @@ on:
         default: 'v1.55.2'
         required: false
         type: string
+      golangci-skip:
+        description: 'If set to true, the lint job will be skipped'
+        default: false
+        required: false
+        type: boolean
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -80,7 +86,7 @@ jobs:
   lint:
     runs-on: Ubuntu-Jumbo-Runner
     needs: detect-noop
-    if: needs.detect-noop.outputs.noop != 'true'
+    if: needs.detect-noop.outputs.noop != 'true' && !inputs.golangci-skip
 
     steps:
       - name: Cleanup Disk
