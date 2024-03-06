@@ -111,16 +111,7 @@ func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
 		return nil
 	}
 	var updatedLines []string
-	index := -1
-	tagExists := false
-	if strings.HasPrefix(lines[0], "//go:build") {
-		tagExists = true
-		index++
-	}
-	emptyLineFollows := len(lines) > 1 && strings.TrimSpace(lines[1]) == ""
-	if deleteTag && emptyLineFollows && tagExists {
-		index++
-	}
+	index, tagExists, emptyLineFollows := getLineStartIndex(lines, deleteTag)
 	updatedLines = lines[index+1:]
 	if !deleteTag {
 		addedLines := [2]string{buildTag}
@@ -132,6 +123,20 @@ func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
 	}
 	// Write the updated content back to the file
 	return errors.Wrapf(os.WriteFile(filePath, []byte(strings.Join(updatedLines, "\n")), 0600), "failed to write the source file at path %s", filePath)
+}
+
+func getLineStartIndex(lines []string, deleteTag bool) (int, bool, bool) {
+	index := -1
+	tagExists := false
+	if strings.HasPrefix(lines[0], "//go:build") {
+		tagExists = true
+		index++
+	}
+	emptyLineFollows := len(lines) > 1 && strings.TrimSpace(lines[1]) == ""
+	if deleteTag && emptyLineFollows && tagExists {
+		index++
+	}
+	return index, tagExists, emptyLineFollows
 }
 
 func main() {
