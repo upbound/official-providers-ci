@@ -48,7 +48,7 @@ env:
   # Common versions
   GOLANGCI_VERSION: 'v1.54.2'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
-  UP_VERSION: 'v0.17.0'
+  UP_VERSION: 'v0.24.2'
 
   # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
   # step 'if env.XXX' != ""', so we copy these to succinctly test whether
