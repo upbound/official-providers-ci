@@ -87,11 +87,11 @@ jobs:
       - name: Login to Upbound
         if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
         env:
-          UP_PASSWORD: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+          UP_TOKEN: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
         run: |
           curl -fsSLo /tmp/up --create-dirs 'https://cli.upbound.io/stable/${{ env.UP_VERSION }}/bin/linux_amd64/up' && \
           chmod +x /tmp/up && \
-          /tmp/up login -u ${{ env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+          /tmp/up login
 
       - name: Checkout
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
