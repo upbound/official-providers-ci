@@ -48,7 +48,7 @@ env:
   # Common versions
   GOLANGCI_VERSION: 'v1.54.2'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
-  UP_VERSION: 'v0.17.0'
+  UP_VERSION: 'v0.24.2'
 
   # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
   # step 'if env.XXX' != ""', so we copy these to succinctly test whether
@@ -87,11 +87,11 @@ jobs:
       - name: Login to Upbound
         if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
         env:
-          UP_PASSWORD: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
+          UP_TOKEN: ${{ secrets.UPBOUND_MARKETPLACE_PUSH_ROBOT_PSW }}
         run: |
           curl -fsSLo /tmp/up --create-dirs 'https://cli.upbound.io/stable/${{ env.UP_VERSION }}/bin/linux_amd64/up' && \
           chmod +x /tmp/up && \
-          /tmp/up login -u ${{ env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR }}
+          /tmp/up login
 
       - name: Checkout
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4

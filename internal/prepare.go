@@ -26,13 +26,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
-
-	"sigs.k8s.io/yaml"
 
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	kyaml "k8s.io/apimachinery/pkg/util/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/upbound/uptest/internal/config"
 )
@@ -169,7 +167,6 @@ func (p *preparer) injectValues(manifestData string, dataSourceMap map[string]st
 }
 
 func generateRFC1123SubdomainCompatibleString() string {
-	rand.Seed(time.Now().UnixNano())
 	s := make([]rune, 8)
 	for i := range s {
 		s[i] = charset[rand.Intn(len(charset))] //nolint:gosec // no need for crypto/rand here
