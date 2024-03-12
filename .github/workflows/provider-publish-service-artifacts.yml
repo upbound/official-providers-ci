@@ -38,6 +38,11 @@ on:
         default: '1.20'
         required: false
         type: string
+      cleanup-disk:
+        description: "If set to true, an initial step will be run to reclaim some extra disk space for the build/test jobs in this workflow"
+        required: false
+        type: boolean
+        default: false
     secrets:
       UPBOUND_MARKETPLACE_PUSH_ROBOT_USR:
         required: true
@@ -73,6 +78,17 @@ jobs:
     needs: index
     runs-on: ubuntu-22.04
     steps:
+      - name: Cleanup Disk
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        if: ${{ inputs.cleanup-disk }}
+        with:
+          android: true
+          dotnet: true
+          haskell: true
+          tool-cache: true
+          large-packages: false
+          swap-storage: false
+
       - name: Setup QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
         with:
