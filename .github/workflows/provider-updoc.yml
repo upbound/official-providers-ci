@@ -69,13 +69,13 @@ jobs:
         run: |
           if [[ "${GITHUB_REF##*/}" == release-* ]]; then
             for s in $SUBPACKAGES; do
-              PROVIDER_PACKAGE_NAME="${{ env.PROVIDER_NAME }}-$s"
+              PROVIDER_PACKAGE_NAME="${PROVIDER_NAME/-upjet/}-$s"
               DOCS_DIR="./docs/family"
                 if [ $s == 'monolith' ]; then
-                  PROVIDER_PACKAGE_NAME="${{ env.PROVIDER_NAME }}"
+                  PROVIDER_PACKAGE_NAME="${PROVIDER_NAME/-upjet/}"
                   DOCS_DIR="./docs/monolith"
                 elif [ $s == 'config' ]; then
-                  PROVIDER_PACKAGE_NAME="provider-family-${GITHUB_REPOSITORY#*-}"
+                  PROVIDER_PACKAGE_NAME="provider-family-${GITHUB_REPOSITORY##*-}"
                   DOCS_DIR="./docs/family"
                 fi
                 echo "Publishing Docs for $PROVIDER_PACKAGE_NAME, ${{ env.VER_MAJOR_MINOR }} from $DOCS_DIR"
