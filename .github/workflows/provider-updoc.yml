@@ -63,22 +63,21 @@ jobs:
       - name: Upload Docs
         env:
           GOOGLE_APPLICATION_CREDENTIALS: sa.json
-          PROVIDER_NAME: ${GITHUB_REPOSITORY#*/}
           VER_MAJOR_MINOR: v${GITHUB_REF#"refs/heads/release-"}
           SUBPACKAGES: ${{ inputs.providers }}
         run: |
           if [[ "${GITHUB_REF##*/}" == release-* ]]; then
             for s in $SUBPACKAGES; do
-              PROVIDER_PACKAGE_NAME="${PROVIDER_NAME/-upjet/}-$s"
+              PROVIDER_PACKAGE_NAME="provider-${GITHUB_REPOSITORY##*-}-${s}"
               DOCS_DIR="./docs/family"
                 if [ $s == 'monolith' ]; then
-                  PROVIDER_PACKAGE_NAME="${PROVIDER_NAME/-upjet/}"
+                  PROVIDER_PACKAGE_NAME="provider-${GITHUB_REPOSITORY##*-}"
                   DOCS_DIR="./docs/monolith"
                 elif [ $s == 'config' ]; then
                   PROVIDER_PACKAGE_NAME="provider-family-${GITHUB_REPOSITORY##*-}"
                   DOCS_DIR="./docs/family"
                 fi
-                echo "Publishing Docs for $PROVIDER_PACKAGE_NAME, ${{ env.VER_MAJOR_MINOR }} from $DOCS_DIR"
+                echo "Publishing Docs for ${PROVIDER_PACKAGE_NAME}, ${{ env.VER_MAJOR_MINOR }} from $DOCS_DIR"
                 go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir="${DOCS_DIR}" --name="${PROVIDER_PACKAGE_NAME}" --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
             done
           else
