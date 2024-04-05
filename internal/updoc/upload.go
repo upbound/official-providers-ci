@@ -119,6 +119,9 @@ func (u *UploadManager) getIndex(afs afero.Fs, dir string, meta map[string]strin
 func (u *UploadManager) getMeta(ctx context.Context, bucket *storage.BucketHandle, cdn string, afs afero.Fs, dir string) (map[string]string, error) {
 	meta := make(map[string]string)
 	if err := afero.Walk(afs, dir, func(p string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if !info.IsDir() {
 			if info.Name() == indexFN || info.Name() == sectionFN {
 				return nil
