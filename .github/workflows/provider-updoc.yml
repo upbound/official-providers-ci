@@ -13,12 +13,14 @@ on:
         default: '1.20'
         required: false
         type: string
+      updoc-version:
+        description: 'updoc version to use while publishing the documentation'
+        default: '83bd901'
+        required: false
+        type: string
     secrets:
       UPBOUND_CI_PROD_BUCKET_SA:
         required: true
-
-env:
-  UPTEST_VERSION: "83bd901"
 
 jobs:
   publish-docs:
@@ -78,7 +80,7 @@ jobs:
                   DOCS_DIR="./docs/family"
                 fi
                 echo "Publishing Docs for ${PROVIDER_PACKAGE_NAME}, ${{ env.VER_MAJOR_MINOR }} from $DOCS_DIR"
-                go run github.com/upbound/uptest/cmd/updoc@${{ env.UPTEST_VERSION }} upload --docs-dir="${DOCS_DIR}" --name="${PROVIDER_PACKAGE_NAME}" --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
+                go run github.com/upbound/uptest/cmd/updoc@${{ inputs.updoc-version }} upload --docs-dir="${DOCS_DIR}" --name="${PROVIDER_PACKAGE_NAME}" --version=${{ env.VER_MAJOR_MINOR }} --bucket-name=bucket-marketplace-docs-production --cdn-domain=https://user-content.upbound.io
             done
           else
             echo "This job can only be run on release branches"
