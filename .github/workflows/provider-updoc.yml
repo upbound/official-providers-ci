@@ -15,7 +15,7 @@ on:
         type: string
       updoc-version:
         description: 'updoc version to use while publishing the documentation'
-        default: '83bd901'
+        default: '21481764'
         required: false
         type: string
     secrets:
