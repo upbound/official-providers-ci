@@ -17,8 +17,6 @@ This repository is also the home of the Upbound official providers reusable work
 - `.github/workflows/provider-publish-service-artifacts.yml`: A reusable workflow for building the official provider families and pushing their packages to the Upbound registry.
 - `.github/workflows/native-provider-bump.yml`: A reusable workflow for bumping the underlying Terraform provider versions of upjet-based official providers.
 - `.github/workflows/provider-backport.yml`: A reusable workflow for opening backport PRs in the specified release branches by inspecting the labels on merged PRs.
-- `.github/workflows/issue-triage.yml`: A reusable workflow for identifying and labeling issues opened by the community.
-- `.github/workflows/pr-triage.yml`: A reusable workflow for identifying and labeling pull requests opened by the community.
 - `.github/workflows/provider-tag.yml`: A reusable workflow for tagging commits in the release process.
 - `.github/workflows/provider-updoc.yml`: A reusable workflow for running `updoc` and publishing the provider documentation to the [Upbound marketplace](https://marketplace.upbound.io/providers).
 - `.github/workflows/scan.yml`: A reusable workflow for running [Trivy](https://trivy.dev) scans in the official provider repositories.
