@@ -45,14 +45,16 @@ jobs:
     runs-on: [e2-standard-8, linux]
     steps:
       - name: Debug
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           echo "Trigger keyword: ${{ inputs.trigger-keyword }}"
           echo "Go version: ${{ inputs.go-version }}"
           echo "github.event.comment.author_association: ${{ github.event.comment.author_association }}"
-          echo "github.event.comment.body: ${{ github.event.comment.body }}"
+          echo "github.event.comment.body: $COMMENT_BODY"
 
   get-example-list:
-    if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
+    if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR') &&
             github.event.issue.pull_request &&
             contains(github.event.comment.body, inputs.trigger-keyword ) }}
     runs-on: [e2-standard-8, linux]
