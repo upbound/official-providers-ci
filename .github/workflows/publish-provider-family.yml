@@ -64,7 +64,7 @@ env:
 
 jobs:
   index:
-    runs-on: [e2-standard-8, linux]
+    runs-on: e2-standard-8
     outputs:
       indices: ${{ steps.calc.outputs.indices }}
     steps:
