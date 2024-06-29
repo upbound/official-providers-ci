@@ -62,7 +62,7 @@ env:
   
 jobs:
   index:
-    runs-on: [e2-standard-8, linux]
+    runs-on: e2-standard-8
     outputs:
       indices: ${{ steps.calc.outputs.indices }}
     steps:
@@ -76,7 +76,7 @@ jobs:
         index: ${{ fromJSON(needs.index.outputs.indices) }}
 
     needs: index
-    runs-on: [e2-standard-8, linux]
+    runs-on: e2-standard-8
     steps:
       - name: Cleanup Disk
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
