@@ -49,7 +49,6 @@ jobs:
           echo "Trigger keyword: ${{ inputs.trigger-keyword }}"
           echo "Go version: ${{ inputs.go-version }}"
           echo "github.event.comment.author_association: ${{ github.event.comment.author_association }}"
-          echo "github.event.comment.body: ${{ github.event.comment.body }}"
 
   get-example-list:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
