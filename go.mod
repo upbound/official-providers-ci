@@ -5,6 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.27.0
 	github.com/adrg/frontmatter v0.2.0
+	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/alecthomas/kong v0.7.1
 	github.com/crossplane/crossplane v1.10.0
 	github.com/crossplane/crossplane-runtime v0.20.0-rc.0.0.20230406155702-4e1673b7141f
@@ -87,6 +88,7 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
+	github.com/xhit/go-str2duration/v2 v2.1.0 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/yuin/goldmark v1.5.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
