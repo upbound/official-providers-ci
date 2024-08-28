@@ -1,3 +1,19 @@
+// Copyright 2024 Upbound Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// main package for the cleanupexamples tooling, the tool to remove
+// uptest-specific code from published examples on the marketplace
 package main
 
 import (
@@ -15,13 +31,38 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+func removeAnnotations(u *unstructured.Unstructured) {
+	annotations := u.GetAnnotations()
+	if annotations != nil {
+		annotationsToRemove := []string{
+			"upjet.upbound.io/",
+			"uptest.upbound.io/",
+		}
+
+		for key := range annotations {
+			for _, prefix := range annotationsToRemove {
+				if strings.HasPrefix(key, prefix) {
+					delete(annotations, key)
+					break
+				}
+			}
+		}
+
+		if len(annotations) == 0 {
+			u.SetAnnotations(nil)
+		} else {
+			u.SetAnnotations(annotations)
+		}
+	}
+}
+
 func processYAML(yamlData []byte) ([]byte, error) {
-	yamlData = bytes.Replace(yamlData, []byte("${Rand.RFC1123Subdomain}"), []byte("random"), -1)
+	yamlData = bytes.ReplaceAll(yamlData, []byte("${Rand.RFC1123Subdomain}"), []byte("random"))
 
 	decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewReader(yamlData), 1024)
 	var modifiedYAMLs []byte
 	separator := []byte("---\n")
-	var first bool = true
+	first := true
 
 	for {
 		u := &unstructured.Unstructured{}
@@ -32,28 +73,7 @@ func processYAML(yamlData []byte) ([]byte, error) {
 			return nil, fmt.Errorf("cannot decode the YAML file: %w", err)
 		}
 
-		annotations := u.GetAnnotations()
-		if annotations != nil {
-			annotationsToRemove := []string{
-				"upjet.upbound.io/",
-				"uptest.upbound.io/",
-			}
-
-			for key := range annotations {
-				for _, prefix := range annotationsToRemove {
-					if strings.HasPrefix(key, prefix) {
-						delete(annotations, key)
-						break
-					}
-				}
-			}
-
-			if len(annotations) == 0 {
-				u.SetAnnotations(nil)
-			} else {
-				u.SetAnnotations(annotations)
-			}
-		}
+		removeAnnotations(u)
 
 		modifiedYAML, err := yaml.Marshal(u.Object)
 		if err != nil {
@@ -70,7 +90,7 @@ func processYAML(yamlData []byte) ([]byte, error) {
 	return modifiedYAMLs, nil
 }
 
-func processDirectory(inputDir string, outputDir string) error {
+func processDirectory(inputDir string, outputDir string) error { //nolint:gocyclo // sequential flow easier to follow
 	// Walk through the input directory
 	err := filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -85,7 +105,7 @@ func processDirectory(inputDir string, outputDir string) error {
 			}
 			newDir := filepath.Join(outputDir, relativePath)
 			if _, err := os.Stat(newDir); os.IsNotExist(err) {
-				err = os.MkdirAll(newDir, 0755)
+				err = os.MkdirAll(newDir, 0750)
 				if err != nil {
 					return fmt.Errorf("cannot create directory %s: %w", newDir, err)
 				}
@@ -95,7 +115,7 @@ func processDirectory(inputDir string, outputDir string) error {
 
 		// Only process YAML files
 		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
-			yamlFile, err := os.ReadFile(path)
+			yamlFile, err := os.ReadFile(filepath.Clean(path))
 			if err != nil {
 				return fmt.Errorf("cannot read the YAML file %s: %w", path, err)
 			}
@@ -111,7 +131,7 @@ func processDirectory(inputDir string, outputDir string) error {
 				return fmt.Errorf("error finding relative path: %w", err)
 			}
 			outputPath := filepath.Join(outputDir, relativePath)
-			err = os.WriteFile(outputPath, modifiedYAMLs, 0644)
+			err = os.WriteFile(outputPath, modifiedYAMLs, 0600)
 			if err != nil {
 				return fmt.Errorf("cannot write the YAML file %s: %w", outputPath, err)
 			}
