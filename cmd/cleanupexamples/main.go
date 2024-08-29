@@ -31,6 +31,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+// removeAnnotations removes specific annotations from a Kubernetes
+// unstructured object. It looks for annotations with prefixes
+// "upjet.upbound.io/" and "uptest.upbound.io/" and removes
+// them if they are present.
 func removeAnnotations(u *unstructured.Unstructured) {
 	annotations := u.GetAnnotations()
 	if annotations != nil {
@@ -56,9 +60,15 @@ func removeAnnotations(u *unstructured.Unstructured) {
 	}
 }
 
+// processYAML processes a YAML file by replacing specific placeholders
+// and removing certain annotations from the Kubernetes objects within it.
+// It returns the modified YAML content as a byte slice with YAML document
+// separators ("---") between each object.
 func processYAML(yamlData []byte) ([]byte, error) {
+	// TODO(turkenf): Handle replacing UPTEST_DATASOURCE placeholders like ${data.aws_account_id}
 	yamlData = bytes.ReplaceAll(yamlData, []byte("${Rand.RFC1123Subdomain}"), []byte("random"))
 
+	// Create a YAML or JSON decoder to read and decode the input YAML data
 	decoder := kyaml.NewYAMLOrJSONDecoder(bytes.NewReader(yamlData), 1024)
 	var modifiedYAMLs []byte
 	separator := []byte("---\n")
@@ -73,6 +83,7 @@ func processYAML(yamlData []byte) ([]byte, error) {
 			return nil, fmt.Errorf("cannot decode the YAML file: %w", err)
 		}
 
+		// Remove specific annotations from the decoded Kubernetes object.
 		removeAnnotations(u)
 
 		modifiedYAML, err := yaml.Marshal(u.Object)
@@ -90,6 +101,10 @@ func processYAML(yamlData []byte) ([]byte, error) {
 	return modifiedYAMLs, nil
 }
 
+// processDirectory walks through a directory structure, processes all YAML
+// files  within it by calling `processYAML`, and saves the modified files
+// to a specified  output directory while preserving the original
+// directory structure.
 func processDirectory(inputDir string, outputDir string) error { //nolint:gocyclo // sequential flow easier to follow
 	// Walk through the input directory
 	err := filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
