@@ -31,32 +31,30 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// removeAnnotations removes specific annotations from a Kubernetes
+// filterAnnotations removes specific annotations from a Kubernetes
 // unstructured object. It looks for annotations with prefixes
 // "upjet.upbound.io/" and "uptest.upbound.io/" and removes
 // them if they are present.
-func removeAnnotations(u *unstructured.Unstructured) {
+func filterAnnotations(u *unstructured.Unstructured) {
 	annotations := u.GetAnnotations()
-	if annotations != nil {
-		annotationsToRemove := []string{
-			"upjet.upbound.io/",
-			"uptest.upbound.io/",
-		}
+	annotationsToRemove := []string{
+		"upjet.upbound.io/",
+		"uptest.upbound.io/",
+	}
 
-		for key := range annotations {
-			for _, prefix := range annotationsToRemove {
-				if strings.HasPrefix(key, prefix) {
-					delete(annotations, key)
-					break
-				}
+	for key := range annotations {
+		for _, prefix := range annotationsToRemove {
+			if strings.HasPrefix(key, prefix) {
+				delete(annotations, key)
+				break
 			}
 		}
+	}
 
-		if len(annotations) == 0 {
-			u.SetAnnotations(nil)
-		} else {
-			u.SetAnnotations(annotations)
-		}
+	if len(annotations) == 0 {
+		u.SetAnnotations(nil)
+	} else {
+		u.SetAnnotations(annotations)
 	}
 }
 
@@ -84,7 +82,7 @@ func processYAML(yamlData []byte) ([]byte, error) {
 		}
 
 		// Remove specific annotations from the decoded Kubernetes object.
-		removeAnnotations(u)
+		filterAnnotations(u)
 
 		modifiedYAML, err := yaml.Marshal(u.Object)
 		if err != nil {
