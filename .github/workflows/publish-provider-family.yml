@@ -117,6 +117,7 @@ jobs:
           submodules: true
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
+          token: ${{ secrets.UPBOUND_GITHUB_BOT_TOKEN }}
 
       - name: Fetch History
         run: git fetch --prune --unshallow
