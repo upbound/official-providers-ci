@@ -81,6 +81,10 @@ func processYAML(yamlData []byte) ([]byte, error) {
 			return nil, fmt.Errorf("cannot decode the YAML file: %w", err)
 		}
 
+		if u == nil {
+			continue
+		}
+
 		// Remove specific annotations from the decoded Kubernetes object.
 		filterAnnotations(u)
 
