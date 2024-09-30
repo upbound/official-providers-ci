@@ -10,6 +10,10 @@ on:
         description: 'Number of supported releases'
         type: number
         default: 1
+    secrets:
+      TOKEN:
+        description: 'Github token to use, optional'
+        required: false
 
 env:
   DOCKER_USR: ${{ secrets.DOCKER_USR }}
@@ -26,7 +30,7 @@ jobs:
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.UPBOUND_GITHUB_BOT_TOKEN }}
+          token: ${{ secrets.TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Get Last Release
         id: get-releases
