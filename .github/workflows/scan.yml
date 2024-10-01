@@ -14,6 +14,12 @@ on:
       TOKEN:
         description: 'Github token to use, optional'
         required: false
+      DOCKER_USR:
+        description: 'Docker username'
+        required: false
+      DOCKER_PSW:
+        description: 'Docker password'
+        required: false
 
 env:
   DOCKER_USR: ${{ secrets.DOCKER_USR }}
@@ -130,6 +136,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USR }}
           password: ${{ secrets.DOCKER_PSW }}
+          registry: xpkg.upbound.io
 
       # we pull the image to be sure we're scanning the latest sha available
       - name: Pull Latest Image
@@ -154,4 +161,4 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: ${{ matrix.image }}:${{ env.tag }}
-
+          token: ${{ secrets.TOKEN || secrets.GITHUB_TOKEN }}
