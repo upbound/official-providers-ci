@@ -32,6 +32,10 @@ on:
         default: ''
         required: false
         type: string
+      runs-on:
+        default: e2-standard-8
+        required: false
+        type: string
     secrets:
       UPTEST_CLOUD_CREDENTIALS:
         description: 'Uptest cloud credentials to be passed to the uptest target as environment variable'
@@ -42,7 +46,7 @@ on:
 
 jobs:
   debug:
-    runs-on: e2-standard-8
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Debug
         run: |
@@ -54,7 +58,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
             github.event.issue.pull_request &&
             contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: e2-standard-8
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       example_list: ${{ steps.get-example-list-name.outputs.example-list }}
       example_hash: ${{ steps.get-example-list-name.outputs.example-hash }}
@@ -111,7 +115,7 @@ jobs:
     if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'CONTRIBUTOR' ) &&
       github.event.issue.pull_request &&
       contains(github.event.comment.body, inputs.trigger-keyword ) }}
-    runs-on: e2-standard-8
+    runs-on: ${{ inputs.runs-on }}
     needs: get-example-list
 
     steps:
