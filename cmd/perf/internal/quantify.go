@@ -16,6 +16,7 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -111,7 +112,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 }
 
 // processPods calculated metrics for provider pods
-func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error {
+func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error { //nolint:gocyclo // sequential flow easier to follow
 	// Initialize aggregated results
 	var aggregatedMemoryResult = &common.Result{Metric: "Memory", MetricUnit: "Bytes"}
 	var aggregatedCPURateResult = &common.Result{Metric: "CPU", MetricUnit: "Rate"}
@@ -162,10 +163,16 @@ func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) er
 
 	if o.yamlOutput {
 		for _, timeToReadinessResult := range timeToReadinessResults {
-			b := strings.Builder{}
-			timeToReadinessResult.PrintYaml(&b)
-			aggregatedMemoryResult.PrintYaml(&b)
-			aggregatedCPURateResult.PrintYaml(&b)
+			b := &bytes.Buffer{}
+			if err := timeToReadinessResult.PrintYaml(b, "time_to_readiness"); err != nil {
+				return errors.Wrap(err, "cannot print ttr data")
+			}
+			if err := aggregatedMemoryResult.PrintYaml(b, "memory"); err != nil {
+				return errors.Wrap(err, "cannot print memory data")
+			}
+			if err := aggregatedCPURateResult.PrintYaml(b, "cpu"); err != nil {
+				return errors.Wrap(err, "cannot print cpu data")
+			}
 
 			f, err := os.Create("results.yaml")
 			if err != nil {
