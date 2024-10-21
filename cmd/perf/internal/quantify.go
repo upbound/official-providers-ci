@@ -16,8 +16,10 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -47,6 +49,7 @@ type QuantifyOptions struct {
 	nodeIP            string
 	applyInterval     time.Duration
 	timeout           time.Duration
+	yamlOutput        bool
 }
 
 // NewCmdQuantify creates a cobra command
@@ -73,6 +76,7 @@ func NewCmdQuantify() *cobra.Command {
 	o.cmd.Flags().StringVar(&o.nodeIP, "node", "", "Node IP")
 	o.cmd.Flags().DurationVar(&o.applyInterval, "apply-interval", 0*time.Second, "Elapsed time between applying two manifests to the cluster. Example = 10s. This means that examples will be applied every 10 seconds.")
 	o.cmd.Flags().DurationVar(&o.timeout, "timeout", 120*time.Minute, "Timeout for the experiment")
+	o.cmd.Flags().BoolVar(&o.yamlOutput, "yaml-output", false, "This option is for exporting experiment results to a yaml file")
 
 	if err := o.cmd.MarkFlagRequired("provider-pods"); err != nil {
 		panic(err)
@@ -89,27 +93,9 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	o.startTime = time.Now()
 	log.Infof("Experiment Started %v\n\n", o.startTime)
 
-	results := make(chan []common.Result, 5)
-	errChan := make(chan error, 1)
-	go func() {
-		timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean, o.applyInterval)
-		if err != nil {
-			errChan <- errors.Wrap(err, "cannot run experiment")
-			return
-		}
-		errChan <- nil
-		results <- timeToReadinessResults
-	}()
-
-	var timeToReadinessResults []common.Result
-	select {
-	case res := <-results:
-		if err := <-errChan; err != nil {
-			return errors.Wrap(err, "")
-		}
-		timeToReadinessResults = res
-	case <-time.After(o.timeout):
-		fmt.Println("Experiment duration exceeded")
+	timeToReadinessResults, err := managed.RunExperiment(o.mrPaths, o.clean, o.applyInterval)
+	if err != nil {
+		return errors.Wrap(err, "failed to run experiment")
 	}
 
 	o.endTime = time.Now()
@@ -118,7 +104,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 	log.Infof("Experiment Duration: %f seconds\n", o.endTime.Sub(o.startTime).Seconds())
 	time.Sleep(60 * time.Second)
 
-	err := o.processPods(timeToReadinessResults)
+	err = o.processPods(timeToReadinessResults)
 	if err != nil {
 		return errors.Wrap(err, "cannot process pods")
 	}
@@ -126,7 +112,7 @@ func (o *QuantifyOptions) Run(_ *cobra.Command, _ []string) error {
 }
 
 // processPods calculated metrics for provider pods
-func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error {
+func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) error { //nolint:gocyclo // sequential flow easier to follow
 	// Initialize aggregated results
 	var aggregatedMemoryResult = &common.Result{Metric: "Memory", MetricUnit: "Bytes"}
 	var aggregatedCPURateResult = &common.Result{Metric: "CPU", MetricUnit: "Rate"}
@@ -174,6 +160,31 @@ func (o *QuantifyOptions) processPods(timeToReadinessResults []common.Result) er
 		aggregatedMemoryResult.Print()
 		aggregatedCPURateResult.Print()
 	}
+
+	if o.yamlOutput {
+		for _, timeToReadinessResult := range timeToReadinessResults {
+			b := &bytes.Buffer{}
+			if err := timeToReadinessResult.PrintYaml(b, "time_to_readiness"); err != nil {
+				return errors.Wrap(err, "cannot print ttr data")
+			}
+			if err := aggregatedMemoryResult.PrintYaml(b, "memory"); err != nil {
+				return errors.Wrap(err, "cannot print memory data")
+			}
+			if err := aggregatedCPURateResult.PrintYaml(b, "cpu"); err != nil {
+				return errors.Wrap(err, "cannot print cpu data")
+			}
+
+			f, err := os.Create("results.yaml")
+			if err != nil {
+				return errors.Wrap(err, "cannot create results.yaml")
+			}
+
+			if _, err = f.WriteString(b.String()); err != nil {
+				return errors.Wrap(err, "cannot write results.yaml")
+			}
+		}
+	}
+
 	return nil
 }
 
