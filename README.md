@@ -1,5 +1,8 @@
 # official-providers-ci
 
+> [!WARNING]
+> This repo is now deprecated and will be archived soon. Do not depend on the workflows or other code from this repo.
+
 > [!IMPORTANT]
 > Uptest framework was contributed to CNCF and now located at https://github.com/crossplane/uptest
 
