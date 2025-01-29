@@ -280,13 +280,22 @@ func (d *RevisionDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 	}
 
 	diffMap := make(map[string]*diff.Diff, len(baseDocs))
-	for i, baseDoc := range baseDocs {
+	for _, baseDoc := range baseDocs {
 		versionName := baseDoc.Info.Version
-		if i >= len(revisionDocs) || revisionDocs[i].Info.Version != versionName {
+		var revisionDoc *openapi3.T
+		for _, r := range revisionDocs {
+			if r.Info.Version == versionName {
+				revisionDoc = r
+				break
+			}
+		}
+
+		if revisionDoc == nil {
 			// no corresponding version to compare in the revision
 			return nil, errors.Errorf("revision has no corresponding version to compare with the base for the version name: %s", versionName)
 		}
-		sd, err := schemaDiff(baseDoc, revisionDocs[i])
+
+		sd, err := schemaDiff(baseDoc, revisionDoc)
 		if err != nil {
 			return nil, errors.Wrap(err, errBreakingRevisionChangesCompute)
 		}
