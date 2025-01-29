@@ -173,6 +173,17 @@ func Test_GetRevisionBreakingChanges(t *testing.T) {
 				},
 			},
 		},
+		"Unordered": {
+			reason: "No diff should be reported if the order of versions is different",
+			args: args{
+				basePath: "testdata/base.yaml",
+				revisionModifiers: []crdModifier{
+					func(r *v1.CustomResourceDefinition) {
+						r.Spec.Versions[0], r.Spec.Versions[1] = r.Spec.Versions[1], r.Spec.Versions[0]
+					},
+				},
+			},
+		},
 		"ExistingEnumConstantRemovedInRevision": {
 			reason: "Removing an existing enum constant is a breaking API change",
 			args: args{
