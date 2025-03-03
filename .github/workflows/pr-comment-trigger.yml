@@ -1,3 +1,4 @@
+
 name: Run Uptest
 
 on:
@@ -36,6 +37,11 @@ on:
         default: e2-standard-8
         required: false
         type: string
+      auto-run-label:
+        description: 'Label that triggers automatic execution of uptest when added to PR'
+        default: 'run-e2e-tests'
+        required: false
+        type: string
     secrets:
       UPTEST_CLOUD_CREDENTIALS:
         description: 'Uptest cloud credentials to be passed to the uptest target as environment variable'
@@ -53,11 +59,15 @@ jobs:
           echo "Trigger keyword: ${{ inputs.trigger-keyword }}"
           echo "Go version: ${{ inputs.go-version }}"
           echo "github.event.comment.author_association: ${{ github.event.comment.author_association }}"
+          echo "github.event_name: ${{ github.event_name }}"
+          echo "github.event.label.name: ${{ github.event.label.name }}"
 
   get-example-list:
-    if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER') &&
-            github.event.issue.pull_request &&
-            contains(github.event.comment.body, inputs.trigger-keyword ) }}
+    if: |
+      (github.event_name == 'issue_comment' &&
+       (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER') &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, inputs.trigger-keyword))
     runs-on: ${{ inputs.runs-on }}
     outputs:
       example_list: ${{ steps.get-example-list-name.outputs.example-list }}
@@ -70,7 +80,8 @@ jobs:
           submodules: true
 
       - name: Checkout PR
-        id: checkout-pr
+        if: ${{ github.event_name == 'issue_comment' }} || ${{ github.event_name == 'pull_request' }}
+        id: checkout-pr-comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -79,10 +90,11 @@ jobs:
           OUTPUT=$(git log -1 --format='%H')
           echo "commit-sha=$OUTPUT" >> $GITHUB_OUTPUT
 
-      - name: Prepare The Example List
+      - name: Get Example List from Comment
+        if: ${{ github.event_name == 'issue_comment' }}
         env:
           COMMENT: ${{ github.event.comment.body }}
-        id: get-example-list-name
+        id: get-example-list-from-comment
         run: |
           PATHS=$(echo $COMMENT | sed 's/^.*\${{ inputs.trigger-keyword }}="//g' | cut -d '"' -f 1 | sed 's/,/ /g')
           EXAMPLE_LIST=""
@@ -102,19 +114,31 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          COMMIT_SHA=""
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            COMMIT_SHA="${{ steps.checkout-pr-comment.outputs.commit-sha }}"
+          else
+            COMMIT_SHA="${{ steps.checkout-pr-label.outputs.commit-sha }}"
+          fi
+
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/${{ github.repository }}/statuses/${{ steps.checkout-pr.outputs.commit-sha }} \
+            /repos/${{ github.repository }}/statuses/${COMMIT_SHA} \
             -f state='pending' \
             -f target_url='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
             -f description='Running...' \
             -f context="Uptest-${{ steps.get-example-list-name.outputs.example-hash }}"
 
   uptest:
-    if: ${{ (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER') &&
-      github.event.issue.pull_request &&
-      contains(github.event.comment.body, inputs.trigger-keyword ) }}
+    if: |
+      (github.event_name == 'issue_comment' &&
+       (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'MEMBER') &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, inputs.trigger-keyword)) ||
+      (github.event_name == 'pull_request' &&
+       github.event.action == 'labeled' &&
+       github.event.label.name == inputs.auto-run-label)
     runs-on: ${{ inputs.runs-on }}
     needs: get-example-list
 
@@ -145,8 +169,9 @@ jobs:
         with:
           go-version: ${{ inputs.go-version }}
 
-      - name: Checkout PR
-        id: checkout-pr
+      - name: Checkout PR (Comment Trigger)
+        if: ${{ github.event_name == 'issue_comment' }}
+        id: checkout-pr-comment
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -155,15 +180,23 @@ jobs:
           OUTPUT=$(git log -1 --format='%H')
           echo "commit-sha=$OUTPUT" >> $GITHUB_OUTPUT
 
+      - name: Checkout PR (Label Trigger)
+        if: ${{ github.event_name == 'pull_request' }}
+        id: checkout-pr-label
+        run: |
+          git submodule update --init --recursive
+          OUTPUT=$(git log -1 --format='%H')
+          echo "commit-sha=$OUTPUT" >> $GITHUB_OUTPUT
+
       - name: Find Go Caches
-        if: ${{ inputs.package-type  == 'provider' }}
+        if: ${{ inputs.package-type == 'provider' }}
         id: go
         run: |
           echo "cache=$(make go.cachedir)" >> $GITHUB_OUTPUT
           echo "modcache=$(make go.mod.cachedir)" >> $GITHUB_OUTPUT
 
       - name: Cache the Go Build Cache
-        if: ${{ inputs.package-type  == 'provider' }}
+        if: ${{ inputs.package-type == 'provider' }}
         uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3
         with:
           path: ${{ steps.go.outputs.cache }}
@@ -171,7 +204,7 @@ jobs:
           restore-keys: ${{ runner.os }}-build-uptest-
 
       - name: Cache the Go Dependencies
-        if: ${{ inputs.package-type  == 'provider' }}
+        if: ${{ inputs.package-type == 'provider' }}
         uses: actions/cache@704facf57e6136b1bc63b828d79edcd491f0ee84 # v3
         with:
           path: ${{ steps.go.outputs.modcache }}
@@ -179,7 +212,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pkg-
 
       - name: Vendor Dependencies
-        if: ${{ inputs.package-type  == 'provider' }}
+        if: ${{ inputs.package-type == 'provider' }}
         run: make vendor vendor.check
 
       - name: Run Uptest
@@ -199,10 +232,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EXAMPLE_HASH: ${{ needs.get-example-list.outputs.example_hash }}
         run: |
+          COMMIT_SHA=""
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            COMMIT_SHA="${{ steps.checkout-pr-comment.outputs.commit-sha }}"
+          else
+            COMMIT_SHA="${{ steps.checkout-pr-label.outputs.commit-sha }}"
+          fi
+
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/${{ github.repository }}/statuses/${{ steps.checkout-pr.outputs.commit-sha }} \
+            /repos/${{ github.repository }}/statuses/${COMMIT_SHA} \
             -f state='success' \
             -f target_url='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
             -f description='Passed' \
@@ -232,10 +272,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EXAMPLE_HASH: ${{ needs.get-example-list.outputs.example_hash }}
         run: |
+          COMMIT_SHA=""
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            COMMIT_SHA="${{ steps.checkout-pr-comment.outputs.commit-sha }}"
+          else
+            COMMIT_SHA="${{ steps.checkout-pr-label.outputs.commit-sha }}"
+          fi
+
           gh api \
             --method POST \
             -H "Accept: application/vnd.github+json" \
-            /repos/${{ github.repository }}/statuses/${{ steps.checkout-pr.outputs.commit-sha }} \
+            /repos/${{ github.repository }}/statuses/${COMMIT_SHA} \
             -f state='failure' \
             -f target_url='https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
             -f description='Failed' \
