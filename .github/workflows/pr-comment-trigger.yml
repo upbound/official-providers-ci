@@ -170,7 +170,7 @@ jobs:
           go-version: ${{ inputs.go-version }}
 
       - name: Checkout PR
-        if: ${{ github.event_name == 'issue_comment' }}
+        if: ${{ github.event_name == 'issue_comment' }} || ${{ github.event_name == 'pull_request' }}
         id: checkout-pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
