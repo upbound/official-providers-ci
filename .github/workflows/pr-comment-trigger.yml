@@ -96,8 +96,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${EVENT_NAME}" == "issue_comment" ]; then
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
             gh pr checkout ${{ github.event.issue.number }}
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            gh pr checkout ${{ github.event.pull_request.number }}
           fi
           git submodule update --init --recursive
           OUTPUT=$(git log -1 --format='%H')
@@ -169,12 +171,16 @@ jobs:
           go-version: ${{ inputs.go-version }}
 
       - name: Checkout PR
-        if: ${{ github.event_name == 'issue_comment' }}
+        if: ${{ github.event_name == 'issue_comment' }} || ${{ github.event_name == 'pull_request' }}
         id: checkout-pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr checkout ${{ github.event.issue.number }}
+          if [ "${{ github.event_name }}" == "issue_comment" ]; then
+            gh pr checkout ${{ github.event.issue.number }}
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            gh pr checkout ${{ github.event.pull_request.number }}
+          fi
           git submodule update --init --recursive
           OUTPUT=$(git log -1 --format='%H')
           echo "commit-sha=$OUTPUT" >> $GITHUB_OUTPUT
