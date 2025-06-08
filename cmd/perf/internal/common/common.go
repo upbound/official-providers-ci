@@ -73,7 +73,7 @@ func ConstructResult(value model.Value, metric, unit string, podName string) (*R
 	}
 	matrix, ok := value.(model.Matrix)
 	if !ok {
-		return nil, errors.New("model cannot cast to matrix")
+		return nil, errors.New("type assertion to matrix failed")
 	}
 
 	for _, m := range matrix {
