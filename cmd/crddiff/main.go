@@ -16,13 +16,16 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"syscall"
 
+	"github.com/tufin/oasdiff/diff"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"sigs.k8s.io/yaml"
 
-	"github.com/upbound/uptest/internal/crdschema"
+	"github.com/upbound/uptest/pkg/crdschema"
 )
 
 var (
@@ -33,8 +36,11 @@ var (
 )
 
 var (
-	revisionDiffOptions = getCRDdiffCommonOptions(cmdRevision)
-	selfDiffOptions     = getCRDdiffCommonOptions(cmdSelf)
+	revisionDiffOptions    = getCRDdiffCommonOptions(cmdRevision)
+	selfDiffOptions        = getCRDdiffCommonOptions(cmdSelf)
+	outputFormat           = app.Flag("output", "Output format: text, json, yaml").Default("text").Enum("text", "json", "yaml")
+	revisionKeepAllChanges = cmdRevision.Flag("keep-all-changes", "Include all changes (breaking and non-breaking) in the output").Default("false").Bool()
+	selfKeepAllChanges     = cmdSelf.Flag("keep-all-changes", "Include all changes (breaking and non-breaking) in the output").Default("false").Bool()
 )
 
 func getCRDdiffCommonOptions(cmd *kingpin.CmdClause) *crdschema.CommonOptions {
@@ -61,7 +67,7 @@ var (
 func crdDiffRevision() {
 	crdDiff, err := crdschema.NewRevisionDiff(*baseCRDPath, *revisionCRDPath, crdschema.WithRevisionDiffCommonOptions(revisionDiffOptions))
 	kingpin.FatalIfError(err, "Failed to load CRDs")
-	reportDiff(crdDiff)
+	reportDiff(crdDiff, *revisionKeepAllChanges)
 }
 
 var (
@@ -71,13 +77,30 @@ var (
 func crdDiffSelf() {
 	crdDiff, err := crdschema.NewSelfDiff(*crdPath, crdschema.WithSelfDiffCommonOptions(selfDiffOptions))
 	kingpin.FatalIfError(err, "Failed to load CRDs")
-	reportDiff(crdDiff)
+	reportDiff(crdDiff, *selfKeepAllChanges)
 }
 
-func reportDiff(crdDiff crdschema.SchemaCheck) {
-	versionMap, err := crdDiff.GetBreakingChanges()
-	kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+func reportDiff(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
+	switch *outputFormat {
+	case "json":
+		reportJSON(crdDiff, keepAllChanges)
+	case "yaml":
+		reportYAML(crdDiff, keepAllChanges)
+	default:
+		reportText(crdDiff, keepAllChanges)
+	}
+}
 
+func reportText(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
+	var versionMap map[string]*diff.Diff
+	var err error
+	if keepAllChanges {
+		versionMap, err = crdDiff.GetRawDiff()
+		kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+	} else {
+		versionMap, err = crdDiff.GetBreakingChanges()
+		kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+	}
 	l := log.New(os.Stderr, "", 0)
 	breakingDetected := false
 	for v, d := range versionMap {
@@ -89,6 +112,49 @@ func reportDiff(crdDiff crdschema.SchemaCheck) {
 		l.Println(crdschema.GetDiffReport(d))
 	}
 	if breakingDetected {
+		syscall.Exit(1)
+	}
+}
+
+func reportJSON(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
+	rawDiff, err := crdDiff.GetRawDiff()
+	kingpin.FatalIfError(err, "Failed to get schema changes")
+
+	report, err := crdschema.GetChangesAsStructured(rawDiff, keepAllChanges)
+	kingpin.FatalIfError(err, "Failed to get changes report")
+
+	data, err := json.MarshalIndent(report, "", "  ")
+	kingpin.FatalIfError(err, "Failed to marshal JSON")
+
+	if _, err := os.Stdout.Write(data); err != nil {
+		kingpin.FatalIfError(err, "Failed to write JSON")
+	}
+	if _, err := os.Stdout.WriteString("\n"); err != nil {
+		kingpin.FatalIfError(err, "Failed to write JSON")
+	}
+
+	// Exit with error code if changes detected
+	if !report.Empty() {
+		syscall.Exit(1)
+	}
+}
+
+func reportYAML(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
+	rawDiff, err := crdDiff.GetRawDiff()
+	kingpin.FatalIfError(err, "Failed to get schema changes")
+
+	report, err := crdschema.GetChangesAsStructured(rawDiff, keepAllChanges)
+	kingpin.FatalIfError(err, "Failed to get changes report")
+
+	data, err := yaml.Marshal(report)
+	kingpin.FatalIfError(err, "Failed to marshal YAML")
+
+	if _, err := os.Stdout.Write(data); err != nil {
+		kingpin.FatalIfError(err, "Failed to write YAML")
+	}
+
+	// Exit with error code if changes detected
+	if !report.Empty() {
 		syscall.Exit(1)
 	}
 }

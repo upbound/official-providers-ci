@@ -198,7 +198,7 @@ func Write(t *testing.T, fs afero.Fs, fn string, content string) afero.Fs {
 	}()
 
 	if _, err := f.WriteString(content); err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	return fs
 }
