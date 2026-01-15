@@ -56,6 +56,7 @@ type CommonOptions struct {
 // API changes between schemas.
 type SchemaCheck interface {
 	GetBreakingChanges() (map[string]*diff.Diff, error)
+	GetRawDiff() (map[string]*diff.Diff, error)
 }
 
 // RevisionDiff can compute schema changes between the base CRD found at `basePath`
@@ -132,6 +133,10 @@ func NewSelfDiff(crdPath string, opts ...SelfDiffOption) (*SelfDiff, error) {
 		return nil, errors.Wrap(err, errCRDLoad)
 	}
 	return d, nil
+}
+
+func (d *SelfDiff) GetCRD() *v1.CustomResourceDefinition {
+	return d.crd
 }
 
 func loadCRD(m string, enableUpjetExtensions bool) (*v1.CustomResourceDefinition, error) {
@@ -226,8 +231,49 @@ func getOpenAPIv3Document(crd *v1.CustomResourceDefinition) ([]*openapi3.T, erro
 }
 
 // GetBreakingChanges returns the breaking changes found in the
-// consecutive versions of a CRD.
+// consecutive versions of a CRD. This method always filters non-breaking
+// changes - use GetRawDiff() if you need all changes.
 func (d *SelfDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
+	diffMap, err := d.GetRawDiff()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get raw diff")
+	}
+	return filterNonBreaking(diffMap), nil
+}
+
+// GetChangesAsStructured returns all schema changes (breaking and non-breaking)
+// as structured data for consecutive versions within a single CRD.
+func GetChangesAsStructured(rawDiff map[string]*diff.Diff, keepAllChanges bool) (*ChangeReport, error) {
+	if !keepAllChanges {
+		rawDiff = filterNonBreaking(rawDiff)
+	}
+
+	r := &ChangeReport{
+		Versions: make(map[string]*VersionChanges),
+	}
+
+	for newVersion, diffData := range rawDiff {
+		var oldVersion string
+		if diffData != nil && diffData.InfoDiff != nil && diffData.InfoDiff.VersionDiff != nil {
+			oldVersion = diffData.InfoDiff.VersionDiff.From.(string)
+		}
+
+		changes := FlattenDiff(diffData)
+		if len(changes) > 0 {
+			r.Versions[newVersion] = &VersionChanges{
+				NewVersion: newVersion,
+				OldVersion: oldVersion,
+				Changes:    changes,
+			}
+		}
+	}
+
+	return r, nil
+}
+
+// GetRawDiff computes the raw diff between consecutive versions in a CRD.
+// It returns unfiltered changes - use GetBreakingChanges() for filtered results.
+func (d *SelfDiff) GetRawDiff() (map[string]*diff.Diff, error) {
 	selfDocs, err := getOpenAPIv3Document(d.crd)
 	if err != nil {
 		return nil, errors.Wrap(err, errBreakingSelfVersionsCompute)
@@ -269,7 +315,18 @@ func sortVersions(versions []*openapi3.T) {
 
 // GetBreakingChanges returns a diff representing
 // the detected breaking schema changes between the base and revision CRDs.
+// This method always filters non-breaking changes - use GetRawDiff() if you need all changes.
 func (d *RevisionDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
+	diffMap, err := d.GetRawDiff()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get raw diff")
+	}
+	return filterNonBreaking(diffMap), nil
+}
+
+// GetRawDiff computes the raw diff between base and revision CRDs.
+// It returns unfiltered changes - use GetBreakingChanges() for filtered results.
+func (d *RevisionDiff) GetRawDiff() (map[string]*diff.Diff, error) {
 	baseDocs, err := getOpenAPIv3Document(d.baseCRD)
 	if err != nil {
 		return nil, errors.Wrap(err, errBreakingRevisionChangesCompute)
@@ -292,7 +349,7 @@ func (d *RevisionDiff) GetBreakingChanges() (map[string]*diff.Diff, error) {
 		}
 		diffMap[versionName] = sd
 	}
-	return filterNonBreaking(diffMap), nil
+	return diffMap, nil
 }
 
 var crdPutEndpoint = diff.Endpoint{
@@ -300,12 +357,23 @@ var crdPutEndpoint = diff.Endpoint{
 	Path:   "/crd",
 }
 
-func filterNonBreaking(diffMap map[string]*diff.Diff) map[string]*diff.Diff {
+func filterNonBreaking(diffMap map[string]*diff.Diff) map[string]*diff.Diff { //nolint:gocyclo // sequential flow easier to follow
 	for v, d := range diffMap {
-		if d.Empty() {
+		if d == nil || d.Empty() {
 			continue
 		}
-		sd := d.EndpointsDiff.Modified[crdPutEndpoint].RequestBodyDiff.ContentDiff.MediaTypeModified[contentTypeJSON].SchemaDiff
+		if d.EndpointsDiff == nil {
+			continue
+		}
+		methodDiff, ok := d.EndpointsDiff.Modified[crdPutEndpoint]
+		if !ok || methodDiff == nil || methodDiff.RequestBodyDiff == nil || methodDiff.RequestBodyDiff.ContentDiff == nil {
+			continue
+		}
+		mediaType, ok := methodDiff.RequestBodyDiff.ContentDiff.MediaTypeModified[contentTypeJSON]
+		if !ok || mediaType == nil {
+			continue
+		}
+		sd := mediaType.SchemaDiff
 		ignoreOptionalNewProperties(sd)
 		if sd != nil && empty(sd.PropertiesDiff) {
 			sd.PropertiesDiff = nil

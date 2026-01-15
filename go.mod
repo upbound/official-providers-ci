@@ -1,6 +1,6 @@
 module github.com/upbound/uptest
 
-go 1.21
+go 1.24.11
 
 require (
 	cloud.google.com/go/storage v1.27.0

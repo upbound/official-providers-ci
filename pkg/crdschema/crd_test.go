@@ -339,7 +339,7 @@ func Test_GetRevisionBreakingChanges(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			diff, err := newRevisionDiffWithModifiers(tt.args.basePath, tt.args.basePath, tt.args.revisionModifiers...)
+			diff, err := newRevisionDiffWithModifiers(tt.args.basePath, tt.args.basePath, nil, tt.args.revisionModifiers...)
 			if err != nil {
 				t.Errorf("\n%s\nnewDiffWithModifiers(...): failed to load base or revision CRD:\n%v", tt.reason, err)
 				return
@@ -415,7 +415,7 @@ func Test_GetSelfBreakingChanges(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			diff, err := newSelfDiffWithModifiers(tt.args.crdPath, tt.args.revisionModifiers...)
+			diff, err := newSelfDiffWithModifiers(tt.args.crdPath, nil, tt.args.revisionModifiers...)
 			if err != nil {
 				t.Errorf("\n%s\nnewDiffWithModifiers(...): failed to load the CRD:\n%v", tt.reason, err)
 				return
@@ -445,8 +445,14 @@ func Test_GetSelfBreakingChanges(t *testing.T) {
 
 type crdModifier func(crd *v1.CustomResourceDefinition)
 
-func newSelfDiffWithModifiers(crdPath string, crdModifiers ...crdModifier) (*SelfDiff, error) {
-	d, err := NewSelfDiff(crdPath)
+func newSelfDiffWithModifiers(crdPath string, opts *CommonOptions, crdModifiers ...crdModifier) (*SelfDiff, error) {
+	var d *SelfDiff
+	var err error
+	if opts != nil {
+		d, err = NewSelfDiff(crdPath, WithSelfDiffCommonOptions(opts))
+	} else {
+		d, err = NewSelfDiff(crdPath)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -456,8 +462,14 @@ func newSelfDiffWithModifiers(crdPath string, crdModifiers ...crdModifier) (*Sel
 	return d, nil
 }
 
-func newRevisionDiffWithModifiers(basePath, revisionPath string, revisionModifiers ...crdModifier) (*RevisionDiff, error) {
-	d, err := NewRevisionDiff(basePath, revisionPath)
+func newRevisionDiffWithModifiers(basePath, revisionPath string, opts *CommonOptions, revisionModifiers ...crdModifier) (*RevisionDiff, error) {
+	var d *RevisionDiff
+	var err error
+	if opts != nil {
+		d, err = NewRevisionDiff(basePath, revisionPath, WithRevisionDiffCommonOptions(opts))
+	} else {
+		d, err = NewRevisionDiff(basePath, revisionPath)
+	}
 	if err != nil {
 		return nil, err
 	}
