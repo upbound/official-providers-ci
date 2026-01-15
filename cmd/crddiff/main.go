@@ -96,23 +96,37 @@ func reportText(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
 	var err error
 	if keepAllChanges {
 		versionMap, err = crdDiff.GetRawDiff()
-		kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+		kingpin.FatalIfError(err, "Failed to compute CRD API changes")
 	} else {
 		versionMap, err = crdDiff.GetBreakingChanges()
 		kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
 	}
 	l := log.New(os.Stderr, "", 0)
-	breakingDetected := false
+	changeDetected := false
 	for v, d := range versionMap {
 		if d.Empty() {
 			continue
 		}
-		breakingDetected = true
+		changeDetected = true
 		l.Printf("Version %q:\n", v)
 		l.Println(crdschema.GetDiffReport(d))
 	}
-	if breakingDetected {
-		syscall.Exit(1)
+
+	// Exit 1 only if breaking changes detected
+	if changeDetected {
+		// If we're showing all changes, need to check if any are breaking
+		if keepAllChanges {
+			breakingChanges, err := crdDiff.GetBreakingChanges()
+			kingpin.FatalIfError(err, "Failed to compute CRD breaking API changes")
+			for _, d := range breakingChanges {
+				if d != nil && !d.Empty() {
+					syscall.Exit(1)
+				}
+			}
+		} else {
+			// If we're only showing breaking changes, any change is breaking
+			syscall.Exit(1)
+		}
 	}
 }
 
@@ -133,8 +147,10 @@ func reportJSON(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
 		kingpin.FatalIfError(err, "Failed to write JSON")
 	}
 
-	// Exit with error code if changes detected
-	if !report.Empty() {
+	// Exit 1 only if breaking changes detected
+	breakingReport, err := crdschema.GetChangesAsStructured(rawDiff, false)
+	kingpin.FatalIfError(err, "Failed to check for breaking changes")
+	if !breakingReport.Empty() {
 		syscall.Exit(1)
 	}
 }
@@ -153,8 +169,10 @@ func reportYAML(crdDiff crdschema.SchemaCheck, keepAllChanges bool) {
 		kingpin.FatalIfError(err, "Failed to write YAML")
 	}
 
-	// Exit with error code if changes detected
-	if !report.Empty() {
+	// Exit 1 only if breaking changes detected
+	breakingReport, err := crdschema.GetChangesAsStructured(rawDiff, false)
+	kingpin.FatalIfError(err, "Failed to check for breaking changes")
+	if !breakingReport.Empty() {
 		syscall.Exit(1)
 	}
 }
