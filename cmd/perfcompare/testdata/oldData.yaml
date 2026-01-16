@@ -1,0 +1,6 @@
+average_time_to_readiness: 5.000000
+peak_time_to_readiness: 10.000000
+average_memory: 33000000.00000
+peak_memory: 40000000.000000
+average_cpu: 60.000000
+peak_cpu: 70.000000
