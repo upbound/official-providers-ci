@@ -21,7 +21,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/tufin/oasdiff/diff"
+	"github.com/oasdiff/oasdiff/diff"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"sigs.k8s.io/yaml"
 
