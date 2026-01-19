@@ -21,8 +21,8 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/oasdiff/oasdiff/diff"
-	"gopkg.in/alecthomas/kingpin.v2"
 	"sigs.k8s.io/yaml"
 
 	"github.com/upbound/uptest/pkg/crdschema"

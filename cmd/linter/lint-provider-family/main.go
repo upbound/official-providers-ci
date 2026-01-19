@@ -26,21 +26,21 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
 	admv1 "k8s.io/api/admissionregistration/v1"
 	extv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	extv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 
-	xpkgparser "github.com/crossplane/crossplane-runtime/pkg/parser"
-	xpv1 "github.com/crossplane/crossplane/apis/apiextensions/v1"
-	pkgmetav1 "github.com/crossplane/crossplane/apis/pkg/meta/v1"
-	pkgmetav1alpha1 "github.com/crossplane/crossplane/apis/pkg/meta/v1alpha1"
+	xpkgparser "github.com/crossplane/crossplane-runtime/v2/pkg/parser"
+	xpv1 "github.com/crossplane/crossplane/v2/apis/apiextensions/v1"
+	pkgmetav1 "github.com/crossplane/crossplane/v2/apis/pkg/meta/v1"
+	pkgmetav1alpha1 "github.com/crossplane/crossplane/v2/apis/pkg/meta/v1alpha1"
 )
 
 const (
