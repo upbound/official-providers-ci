@@ -20,7 +20,7 @@ S3_BUCKET ?= upbound.official-providers-ci.releases
 GO_REQUIRED_VERSION = 1.24
 # GOLANGCILINT_VERSION is inherited from build submodule by default.
 # Uncomment below if you need to override the version.
-GOLANGCILINT_VERSION ?= 1.64.8
+GOLANGCILINT_VERSION ?= 2.8.0
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/crddiff $(GO_PROJECT)/cmd/buildtagger $(GO_PROJECT)/cmd/updoc $(GO_PROJECT)/cmd/ttr $(GO_PROJECT)/cmd/perf $(GO_PROJECT)/cmd/linter/lint-provider-family
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)

@@ -11,7 +11,7 @@ on:
 env:
   # Common versions
   GO_VERSION: '1.24'
-  GOLANGCI_VERSION: 'v1.64.8'
+  GOLANGCI_VERSION: 'v2.8.0'
   DOCKER_BUILDX_VERSION: 'v0.30.1'
 
   # Common users. We can't run a step 'if secrets.XXX != ""' but we can run a
@@ -66,7 +66,7 @@ jobs:
       # We could run 'make lint' but we prefer this action because it leaves
       # 'annotations' (i.e. it comments on PRs to point out linter violations).
       - name: Lint
-        uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc # v3
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 # v9
         with:
           version: ${{ env.GOLANGCI_VERSION }}
 
