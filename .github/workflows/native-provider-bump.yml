@@ -69,7 +69,7 @@ jobs:
 
       - name: New pull request
         if: steps.bump-mk.outputs.bumped != ''
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38 # v5.0.2
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8.0.0
         with:
           title: Bump native provider to version ${{ steps.bump-mk.outputs.version }}
           commit-message: Bump native provider to version ${{ steps.bump-mk.outputs.version }}
