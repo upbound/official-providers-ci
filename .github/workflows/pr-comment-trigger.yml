@@ -194,7 +194,7 @@ jobs:
 
       - name: Cache the Go Build Cache
         if: ${{ inputs.package-type  == 'provider' }}
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
         with:
           path: ${{ steps.go.outputs.cache }}
           key: ${{ runner.os }}-build-uptest-${{ hashFiles('**/go.sum') }}
@@ -202,7 +202,7 @@ jobs:
 
       - name: Cache the Go Dependencies
         if: ${{ inputs.package-type  == 'provider' }}
-        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4
+        uses: actions/cache@8b402f58fbc84540c8b491a91e594a4576fec3d7 # v5
         with:
           path: ${{ steps.go.outputs.modcache }}
           key: ${{ runner.os }}-pkg-${{ hashFiles('**/go.sum') }}
