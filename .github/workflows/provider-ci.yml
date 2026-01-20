@@ -371,7 +371,7 @@ jobs:
           install: true
 
       - name: Login to Upbound
-        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         if: env.UPBOUND_MARKETPLACE_PUSH_ROBOT_USR != ''
         with:
           registry: xpkg.upbound.io
