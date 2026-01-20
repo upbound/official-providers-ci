@@ -33,7 +33,7 @@ jobs:
       images: ${{ steps.split-images.outputs.images }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0
           token: ${{ secrets.TOKEN || secrets.GITHUB_TOKEN }}
