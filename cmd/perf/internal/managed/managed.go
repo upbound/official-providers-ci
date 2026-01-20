@@ -313,7 +313,7 @@ func createDynamicClient() dynamic.Interface {
 }
 
 func runCommand(command string) error {
-	cmd := exec.Command("bash", "-c", command) // #nosec G204
+	cmd := exec.Command("bash", "-c", command) //nolint:noctx // #nosec G204
 	stdout, _ := cmd.StdoutPipe()
 	if err := cmd.Start(); err != nil {
 		return errors.Wrap(err, "cannot start kubectl")
