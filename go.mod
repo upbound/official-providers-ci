@@ -2,6 +2,8 @@ module github.com/upbound/uptest
 
 go 1.25
 
+toolchain go1.25.6
+
 require (
 	cloud.google.com/go/storage v1.56.0
 	github.com/adrg/frontmatter v0.2.0
