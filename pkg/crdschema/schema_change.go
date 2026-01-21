@@ -14,7 +14,11 @@
 
 package crdschema
 
-import "github.com/tufin/oasdiff/diff"
+import (
+	kinoapi "github.com/getkin/kin-openapi/openapi3"
+	"github.com/oasdiff/oasdiff/diff"
+	"github.com/oasdiff/oasdiff/utils"
+)
 
 // ChangeType represents the type of schema change detected
 type ChangeType string
@@ -38,11 +42,8 @@ type SchemaChange struct {
 	// ChangeType indicates what kind of change occurred
 	ChangeType ChangeType `json:"changeType"`
 
-	// OldValue contains the original value (if applicable)
-	OldValue interface{} `json:"oldValue,omitempty"`
-
-	// NewValue contains the new value (if applicable)
-	NewValue interface{} `json:"newValue,omitempty"`
+	// TypeChangeDetails describes the change for ChangeTypeTypeChanged
+	TypeChangeDetails *TypeChangeDetails `json:"typeChangeDetails,omitempty"`
 
 	// RawSchemaDiff contains the full SchemaDiff object for this change.
 	// This is not serialized to JSON but can be used for advanced processing.
@@ -92,4 +93,16 @@ func (r *ChangeReport) TotalChanges() int {
 		}
 	}
 	return count
+}
+
+// TypeChangeDetails is the diff information for a type change
+type TypeChangeDetails struct {
+	// OldType is the type of the base schema
+	OldType *kinoapi.Types `json:"oldType,omitempty"`
+	// NewType is the type of the revision schema
+	NewType *kinoapi.Types `json:"newType,omitempty"`
+	// Added is the list of types added to base schema
+	Added utils.StringList `json:"added"`
+	// Deleted is the list of types that were removed from base schema
+	Deleted utils.StringList `json:"deleted"`
 }

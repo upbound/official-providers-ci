@@ -17,7 +17,8 @@ package crdschema
 import (
 	"strings"
 
-	"github.com/tufin/oasdiff/diff"
+	kinoapi "github.com/getkin/kin-openapi/openapi3"
+	"github.com/oasdiff/oasdiff/diff"
 )
 
 // FlattenDiff converts a nested diff.Diff structure into a flat list of SchemaChanges.
@@ -158,14 +159,24 @@ func extractTypeChanges(path string, sd *diff.SchemaDiff) []SchemaChange {
 
 	// Type change (e.g., string → integer)
 	if sd.TypeDiff != nil && !sd.TypeDiff.Empty() {
-		changes = append(changes, SchemaChange{
-			Path:          path,
-			PathParts:     parsePath(path),
-			ChangeType:    ChangeTypeTypeChanged,
-			OldValue:      sd.TypeDiff.From,
-			NewValue:      sd.TypeDiff.To,
+		schChange := SchemaChange{
+			Path:       path,
+			PathParts:  parsePath(path),
+			ChangeType: ChangeTypeTypeChanged,
+			TypeChangeDetails: &TypeChangeDetails{
+				Added:   sd.TypeDiff.Added,
+				Deleted: sd.TypeDiff.Deleted,
+			},
 			RawSchemaDiff: sd,
-		})
+		}
+		// set original types for display purposes
+		if sd.Base != nil {
+			schChange.TypeChangeDetails.OldType = sd.Base.Type
+		}
+		if sd.Revision != nil {
+			schChange.TypeChangeDetails.NewType = sd.Revision.Type
+		}
+		changes = append(changes, schChange)
 	}
 
 	return changes
@@ -199,7 +210,7 @@ func shouldSkipDueToArrayObjectConversion(sd *diff.SchemaDiff) bool {
 		return false
 	}
 	// Check for array->object conversions
-	return sd.TypeDiff.From == "array" && sd.TypeDiff.To == "object"
+	return sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) && sd.TypeDiff.Added.Is(kinoapi.TypeObject)
 }
 
 // extractItemsChanges handles changes to array item schemas (ItemsDiff).
@@ -219,7 +230,7 @@ func extractItemsChanges(path string, sd *diff.SchemaDiff) []SchemaChange {
 	// (e.g., array items gain/lose fields, or item type changes).
 	if sd.TypeDiff != nil && !sd.TypeDiff.Empty() {
 		// If type is changing FROM array or TO array, skip ItemsDiff processing
-		if sd.TypeDiff.From == "array" || sd.TypeDiff.To == "array" {
+		if sd.TypeDiff.Added.Is(kinoapi.TypeArray) || sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) {
 			return nil
 		}
 	}

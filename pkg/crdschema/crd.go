@@ -24,9 +24,10 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/oasdiff/oasdiff/diff"
+	"github.com/oasdiff/oasdiff/report"
+	"github.com/oasdiff/oasdiff/utils"
 	"github.com/pkg/errors"
-	"github.com/tufin/oasdiff/diff"
-	"github.com/tufin/oasdiff/report"
 	"golang.org/x/mod/semver"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiyaml "k8s.io/apimachinery/pkg/util/yaml"
@@ -198,10 +199,10 @@ func getOpenAPIv3Document(crd *v1.CustomResourceDefinition) ([]*openapi3.T, erro
 			Info: &openapi3.Info{
 				Version: v.Name,
 			},
-			Paths: make(openapi3.Paths),
+			Paths: openapi3.NewPaths(),
 		}
-		c := make(openapi3.Content)
-		t.Paths["/crd"] = &openapi3.PathItem{
+		c := openapi3.NewContent()
+		t.Paths.Set("/crd", &openapi3.PathItem{
 			Put: &openapi3.Operation{
 				RequestBody: &openapi3.RequestBodyRef{
 					Value: &openapi3.RequestBody{
@@ -209,7 +210,7 @@ func getOpenAPIv3Document(crd *v1.CustomResourceDefinition) ([]*openapi3.T, erro
 					},
 				},
 			},
-		}
+		})
 		s := &openapi3.Schema{}
 		c[contentTypeJSON] = &openapi3.MediaType{
 			Schema: &openapi3.SchemaRef{
@@ -417,7 +418,7 @@ func ignorePropertiesDiff(sd *diff.SchemaDiff) {
 
 func keepOptionalNewFieldsDiff(sd *diff.SchemaDiff) {
 	// optional new fields are non-breaking
-	filteredAddedProps := make(diff.StringList, 0, len(sd.PropertiesDiff.Added))
+	filteredAddedProps := make(utils.StringList, 0, len(sd.PropertiesDiff.Added))
 	if sd.RequiredDiff != nil {
 		for _, f := range sd.PropertiesDiff.Added {
 			for _, r := range sd.RequiredDiff.Added {
@@ -447,10 +448,10 @@ func empty(sd *diff.SchemasDiff) bool {
 }
 
 func schemaDiff(baseDoc, revisionDoc *openapi3.T) (*diff.Diff, error) {
-	config := &diff.Config{
-		ExcludeExamples:    true,
-		ExcludeDescription: true,
-	}
+	config := diff.NewConfig().WithExcludeElements([]string{
+		diff.ExcludeExamplesOption,
+		diff.ExcludeDescriptionOption,
+	})
 	sd, err := diff.Get(config, baseDoc, revisionDoc)
 	return sd, errors.Wrap(err, "failed to compute breaking changes between OpenAPI v3 schemas")
 }

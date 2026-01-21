@@ -17,8 +17,10 @@ package crdschema
 import (
 	"testing"
 
+	kinoapi "github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/oasdiff/oasdiff/utils"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
@@ -106,8 +108,12 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						Path:       "spec.forProvider.certificateChain",
 						PathParts:  []string{"spec", "forProvider", "certificateChain"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "string",
-						NewValue:   "integer",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"string"},
+							NewType: &kinoapi.Types{"integer"},
+							Added:   utils.StringList{"integer"},
+							Deleted: utils.StringList{"string"},
+						},
 					},
 				},
 			},
@@ -185,8 +191,12 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						Path:       "spec.forProvider.validationOption[*].domainName",
 						PathParts:  []string{"spec", "forProvider", "validationOption[*]", "domainName"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "string",
-						NewValue:   "integer",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"string"},
+							NewType: &kinoapi.Types{"integer"},
+							Added:   utils.StringList{"integer"},
+							Deleted: utils.StringList{"string"},
+						},
 					},
 				},
 			},
@@ -209,8 +219,12 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						Path:       "spec.forProvider.subjectAlternativeNames",
 						PathParts:  []string{"spec", "forProvider", "subjectAlternativeNames"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "array",
-						NewValue:   "string",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"array"},
+							NewType: &kinoapi.Types{"string"},
+							Added:   utils.StringList{"string"},
+							Deleted: utils.StringList{"array"},
+						},
 					},
 				},
 			},
@@ -238,8 +252,12 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						Path:       "spec.forProvider.certificateChain",
 						PathParts:  []string{"spec", "forProvider", "certificateChain"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "string",
-						NewValue:   "array",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"string"},
+							NewType: &kinoapi.Types{"array"},
+							Added:   utils.StringList{"array"},
+							Deleted: utils.StringList{"string"},
+						},
 					},
 				},
 			},
@@ -296,8 +314,12 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						Path:       "spec.forProvider.certificateChain",
 						PathParts:  []string{"spec", "forProvider", "certificateChain"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "string",
-						NewValue:   "integer",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"string"},
+							NewType: &kinoapi.Types{"integer"},
+							Added:   utils.StringList{"integer"},
+							Deleted: utils.StringList{"string"},
+						},
 					},
 					{
 						Path:       "spec.forProvider.newField",
@@ -406,8 +428,12 @@ func TestFlattenDiff_SelfDiff(t *testing.T) {
 						Path:       "spec.forProvider.certificateChain",
 						PathParts:  []string{"spec", "forProvider", "certificateChain"},
 						ChangeType: ChangeTypeTypeChanged,
-						OldValue:   "string",
-						NewValue:   "integer",
+						TypeChangeDetails: &TypeChangeDetails{
+							OldType: &kinoapi.Types{"string"},
+							NewType: &kinoapi.Types{"integer"},
+							Added:   utils.StringList{"integer"},
+							Deleted: utils.StringList{"string"},
+						},
 					},
 				},
 			},
