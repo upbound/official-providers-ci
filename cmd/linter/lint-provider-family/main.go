@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 
 	xpkgparser "github.com/crossplane/crossplane-runtime/v2/pkg/parser"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane/v2/apis/apiextensions/v1"
 	pkgmetav1 "github.com/crossplane/crossplane/v2/apis/pkg/meta/v1"
 	pkgmetav1alpha1 "github.com/crossplane/crossplane/v2/apis/pkg/meta/v1alpha1"
@@ -147,15 +148,18 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 		// check if the Provider.pkg has a family label
 		foundMeta := false
 		for _, o := range metaMap[group].GetMeta() {
-			m, ok := o.(*pkgmetav1alpha1.Provider)
+			var m resource.Object
+			m, ok := o.(*pkgmetav1.Provider)
 			if !ok {
-				continue
+				if m, ok = o.(*pkgmetav1alpha1.Provider); !ok {
+					continue
+				}
 			}
 			foundMeta = true
 
 			// check family label
 			foundLabel := false
-			for k, v := range m.Labels {
+			for k, v := range m.GetLabels() {
 				if k == labelFamily && v == familyConfigPackageName {
 					foundLabel = true
 					break
@@ -168,9 +172,16 @@ func lint(config *ssopLinterConfig) error { //nolint:gocyclo // sequential flow 
 				log.Fatalln("Family label not found: ", e.Name())
 			}
 
-			// check dependency to family config package
-			if group != *config.providerName && (len(m.Spec.DependsOn) != 1 || m.Spec.DependsOn[0].Provider == nil || *m.Spec.DependsOn[0].Provider != familyConfigPackageRef) {
-				log.Fatalln("Missing dependency to family config package: ", e.Name())
+			switch m := m.(type) {
+			case *pkgmetav1.Provider:
+				// check dependency to family config package
+				if group != *config.providerName && (len(m.Spec.DependsOn) != 1 || m.Spec.DependsOn[0].Provider == nil || *m.Spec.DependsOn[0].Provider != familyConfigPackageRef) {
+					log.Fatalln("Missing dependency to family config package: ", e.Name())
+				}
+			case *pkgmetav1alpha1.Provider:
+				if group != *config.providerName && (len(m.Spec.DependsOn) != 1 || m.Spec.DependsOn[0].Provider == nil || *m.Spec.DependsOn[0].Provider != familyConfigPackageRef) {
+					log.Fatalln("Missing dependency to family config package: ", e.Name())
+				}
 			}
 			break
 		}
