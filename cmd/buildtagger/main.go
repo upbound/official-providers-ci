@@ -25,8 +25,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/pkg/errors"
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
