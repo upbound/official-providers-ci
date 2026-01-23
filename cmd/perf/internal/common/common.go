@@ -17,6 +17,7 @@ package common
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/pkg/errors"
@@ -109,4 +110,20 @@ func (r Result) Print() {
 	}
 	log.Info(fmt.Sprintf("Average %s: %f %s \n", r.Metric, r.Average, r.MetricUnit))
 	log.Info(fmt.Sprintf("Peak %s: %f %s \n", r.Metric, r.Peak, r.MetricUnit))
+}
+
+// PrintYaml reports the results in a yaml format
+func (r Result) PrintYaml(b io.Writer, yamlTag string) error {
+	if r.PodName != "" {
+		if _, err := fmt.Fprintf(b, "Pod: %s\n", r.PodName); err != nil {
+			return errors.Wrap(err, "error printing pod data")
+		}
+	}
+	if _, err := fmt.Fprintf(b, "average_%s: %f\n", yamlTag, r.Average); err != nil {
+		return errors.Wrap(err, "error printing average data")
+	}
+	if _, err := fmt.Fprintf(b, "peak_%s: %f\n", yamlTag, r.Peak); err != nil {
+		return errors.Wrap(err, "error printing peak data")
+	}
+	return nil
 }
