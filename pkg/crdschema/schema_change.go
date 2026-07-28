@@ -17,7 +17,6 @@ package crdschema
 import (
 	kinoapi "github.com/getkin/kin-openapi/openapi3"
 	"github.com/oasdiff/oasdiff/diff"
-	"github.com/oasdiff/oasdiff/utils"
 )
 
 // ChangeType represents the type of schema change detected
@@ -102,7 +101,7 @@ type TypeChangeDetails struct {
 	// NewType is the type of the revision schema
 	NewType *kinoapi.Types `json:"newType,omitempty"`
 	// Added is the list of types added to base schema
-	Added utils.StringList `json:"added"`
+	Added []string `json:"added"`
 	// Deleted is the list of types that were removed from base schema
-	Deleted utils.StringList `json:"deleted"`
+	Deleted []string `json:"deleted"`
 }

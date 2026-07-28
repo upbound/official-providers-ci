@@ -20,7 +20,6 @@ import (
 	kinoapi "github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/oasdiff/oasdiff/utils"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
@@ -111,8 +110,8 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"string"},
 							NewType: &kinoapi.Types{"integer"},
-							Added:   utils.StringList{"integer"},
-							Deleted: utils.StringList{"string"},
+							Added:   []string{"integer"},
+							Deleted: []string{"string"},
 						},
 					},
 				},
@@ -194,8 +193,8 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"string"},
 							NewType: &kinoapi.Types{"integer"},
-							Added:   utils.StringList{"integer"},
-							Deleted: utils.StringList{"string"},
+							Added:   []string{"integer"},
+							Deleted: []string{"string"},
 						},
 					},
 				},
@@ -222,8 +221,8 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"array"},
 							NewType: &kinoapi.Types{"string"},
-							Added:   utils.StringList{"string"},
-							Deleted: utils.StringList{"array"},
+							Added:   []string{"string"},
+							Deleted: []string{"array"},
 						},
 					},
 				},
@@ -255,8 +254,8 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"string"},
 							NewType: &kinoapi.Types{"array"},
-							Added:   utils.StringList{"array"},
-							Deleted: utils.StringList{"string"},
+							Added:   []string{"array"},
+							Deleted: []string{"string"},
 						},
 					},
 				},
@@ -317,8 +316,8 @@ func TestFlattenDiff_RevisionDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"string"},
 							NewType: &kinoapi.Types{"integer"},
-							Added:   utils.StringList{"integer"},
-							Deleted: utils.StringList{"string"},
+							Added:   []string{"integer"},
+							Deleted: []string{"string"},
 						},
 					},
 					{
@@ -431,8 +430,8 @@ func TestFlattenDiff_SelfDiff(t *testing.T) {
 						TypeChangeDetails: &TypeChangeDetails{
 							OldType: &kinoapi.Types{"string"},
 							NewType: &kinoapi.Types{"integer"},
-							Added:   utils.StringList{"integer"},
-							Deleted: utils.StringList{"string"},
+							Added:   []string{"integer"},
+							Deleted: []string{"string"},
 						},
 					},
 				},

@@ -26,7 +26,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/oasdiff/oasdiff/diff"
 	"github.com/oasdiff/oasdiff/report"
-	"github.com/oasdiff/oasdiff/utils"
 	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -418,7 +417,7 @@ func ignorePropertiesDiff(sd *diff.SchemaDiff) {
 
 func keepOptionalNewFieldsDiff(sd *diff.SchemaDiff) {
 	// optional new fields are non-breaking
-	filteredAddedProps := make(utils.StringList, 0, len(sd.PropertiesDiff.Added))
+	filteredAddedProps := make([]string, 0, len(sd.PropertiesDiff.Added))
 	if sd.RequiredDiff != nil {
 		for _, f := range sd.PropertiesDiff.Added {
 			for _, r := range sd.RequiredDiff.Added {
@@ -448,10 +447,11 @@ func empty(sd *diff.SchemasDiff) bool {
 }
 
 func schemaDiff(baseDoc, revisionDoc *openapi3.T) (*diff.Diff, error) {
-	config := diff.NewConfig().WithExcludeElements([]string{
-		diff.ExcludeExamplesOption,
-		diff.ExcludeDescriptionOption,
-	})
+	config := diff.NewConfig(
+		diff.WithExcludeElements([]string{
+			diff.ExcludeExamplesOption,
+			diff.ExcludeDescriptionOption,
+		}))
 	sd, err := diff.Get(config, baseDoc, revisionDoc)
 	return sd, errors.Wrap(err, "failed to compute breaking changes between OpenAPI v3 schemas")
 }

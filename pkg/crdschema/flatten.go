@@ -210,7 +210,8 @@ func shouldSkipDueToArrayObjectConversion(sd *diff.SchemaDiff) bool {
 		return false
 	}
 	// Check for array->object conversions
-	return sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) && sd.TypeDiff.Added.Is(kinoapi.TypeObject)
+
+	return matchesType(sd.TypeDiff.Deleted, kinoapi.TypeArray) && matchesType(sd.TypeDiff.Added, kinoapi.TypeObject)
 }
 
 // extractItemsChanges handles changes to array item schemas (ItemsDiff).
@@ -230,7 +231,7 @@ func extractItemsChanges(path string, sd *diff.SchemaDiff) []SchemaChange {
 	// (e.g., array items gain/lose fields, or item type changes).
 	if sd.TypeDiff != nil && !sd.TypeDiff.Empty() {
 		// If type is changing FROM array or TO array, skip ItemsDiff processing
-		if sd.TypeDiff.Added.Is(kinoapi.TypeArray) || sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) {
+		if matchesType(sd.TypeDiff.Added, kinoapi.TypeArray) || matchesType(sd.TypeDiff.Deleted, kinoapi.TypeArray) {
 			return nil
 		}
 	}
@@ -239,4 +240,11 @@ func extractItemsChanges(path string, sd *diff.SchemaDiff) []SchemaChange {
 	// Use [*] notation to indicate this is the schema for array items.
 	itemPath := path + "[*]"
 	return walkSchemaDiff(itemPath, sd.ItemsDiff)
+}
+
+func matchesType(oasType []string, typ string) bool {
+	if oasType == nil {
+		return false
+	}
+	return len(oasType) == 1 && oasType[0] == typ
 }
