@@ -132,7 +132,10 @@ func processDirectory(inputDir string, outputDir string) error { //nolint:gocycl
 
 		// Only process YAML files
 		if filepath.Ext(path) == ".yaml" || filepath.Ext(path) == ".yml" {
-			yamlFile, err := os.ReadFile(filepath.Clean(path))
+			// The path originates from walking an operator-supplied input
+			// directory, so a symlink TOCTOU race is not a concern for this
+			// CI tool.
+			yamlFile, err := os.ReadFile(filepath.Clean(path)) //nolint:gosec // G122: operator-controlled path from filepath.Walk, not untrusted input
 			if err != nil {
 				return fmt.Errorf("cannot read the YAML file %s: %w", path, err)
 			}

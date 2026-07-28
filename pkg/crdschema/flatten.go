@@ -210,7 +210,7 @@ func shouldSkipDueToArrayObjectConversion(sd *diff.SchemaDiff) bool {
 		return false
 	}
 	// Check for array->object conversions
-	return sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) && sd.TypeDiff.Added.Is(kinoapi.TypeObject)
+	return IsOfType(sd.TypeDiff.Deleted, kinoapi.TypeArray) && IsOfType(sd.TypeDiff.Added, kinoapi.TypeObject)
 }
 
 // extractItemsChanges handles changes to array item schemas (ItemsDiff).
@@ -230,7 +230,7 @@ func extractItemsChanges(path string, sd *diff.SchemaDiff) []SchemaChange {
 	// (e.g., array items gain/lose fields, or item type changes).
 	if sd.TypeDiff != nil && !sd.TypeDiff.Empty() {
 		// If type is changing FROM array or TO array, skip ItemsDiff processing
-		if sd.TypeDiff.Added.Is(kinoapi.TypeArray) || sd.TypeDiff.Deleted.Is(kinoapi.TypeArray) {
+		if IsOfType(sd.TypeDiff.Added, kinoapi.TypeArray) || IsOfType(sd.TypeDiff.Deleted, kinoapi.TypeArray) {
 			return nil
 		}
 	}
