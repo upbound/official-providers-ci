@@ -20,7 +20,7 @@ on:
         default: false
       golangci-version:
         description: 'The version string to be used with the golangci-lint action'
-        default: 'v2.8.0'
+        default: 'v2.11.4'
         required: false
         type: string
       golangci-skip:
