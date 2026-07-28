@@ -121,8 +121,9 @@ func updateFileWithBuildTag(filePath, buildTag string, deleteTag bool) error {
 		}
 		updatedLines = append(addedLines[:trimIndex], updatedLines...)
 	}
-	// Write the updated content back to the file
-	return errors.Wrapf(os.WriteFile(filePath, []byte(strings.Join(updatedLines, "\n")), 0600), "failed to write the source file at path %s", filePath)
+	// Write the updated content back to the file. The path originates from
+	// walking an operator-supplied parent directory, not from untrusted input.
+	return errors.Wrapf(os.WriteFile(filepath.Clean(filePath), []byte(strings.Join(updatedLines, "\n")), 0600), "failed to write the source file at path %s", filePath) //nolint:gosec // G703: operator-controlled path from filepath.Walk
 }
 
 func getLineStartIndex(lines []string, deleteTag bool) (int, bool, bool) {
