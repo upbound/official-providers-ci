@@ -418,18 +418,18 @@ func ignorePropertiesDiff(sd *diff.SchemaDiff) {
 
 func keepOptionalNewFieldsDiff(sd *diff.SchemaDiff) {
 	// optional new fields are non-breaking
-	filteredAddedProps := make(utils.StringList, 0, len(sd.PropertiesDiff.Added))
+	filteredAddedProps := make(utils.StringSet, len(sd.PropertiesDiff.Added))
 	if sd.RequiredDiff != nil {
 		for _, f := range sd.PropertiesDiff.Added {
 			for _, r := range sd.RequiredDiff.Added {
 				if f == r {
-					filteredAddedProps = append(filteredAddedProps, f)
+					filteredAddedProps.Add(f)
 					break
 				}
 			}
 		}
 	}
-	sd.PropertiesDiff.Added = filteredAddedProps
+	sd.PropertiesDiff.Added = filteredAddedProps.ToStringList()
 }
 
 func empty(sd *diff.SchemasDiff) bool {
@@ -448,10 +448,11 @@ func empty(sd *diff.SchemasDiff) bool {
 }
 
 func schemaDiff(baseDoc, revisionDoc *openapi3.T) (*diff.Diff, error) {
-	config := diff.NewConfig().WithExcludeElements([]string{
-		diff.ExcludeExamplesOption,
-		diff.ExcludeDescriptionOption,
-	})
+	config := diff.NewConfig(
+		diff.WithExcludeElements([]string{
+			diff.ExcludeExamplesOption,
+			diff.ExcludeDescriptionOption,
+		}))
 	sd, err := diff.Get(config, baseDoc, revisionDoc)
 	return sd, errors.Wrap(err, "failed to compute breaking changes between OpenAPI v3 schemas")
 }
